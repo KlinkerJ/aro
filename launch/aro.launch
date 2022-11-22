@@ -13,6 +13,13 @@
   
   <!-- include ds4 remote control -->
   <include file="$(find hector_quadrotor_demo)/hector_aro/launch/status_to_hector.launch" /> 
+
+  <!-- Navigation Goals in Rviz -->
+  <node pkg="aro" 
+    type="hector_node.py" 
+    name="hector_node" 
+    output="screen" >
+  </node>
   
   <!-- Start rviz visualization with preset config -->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find hector_quadrotor_demo)/rviz_cfg/outdoor_flight.rviz"/>
