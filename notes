@@ -1,0 +1,35 @@
+hector_quadrotor_noetic
+--> hector_quadrotor
+----> hector_quadrotor_demo
+------> hector_aro
+       
+1. add status_to_hector .py and .yaml with low scaling factors
+2. edit hector_quadrotor_noetic/hector_models/hector_sensors_description/urdf/hokuyo_utm30lx.urdf.xacro <min>0.08</min> --> min range <min>0.2</min> (does not work)
+
+
+
+roslaunch hector_quadrotor_demo two_drones_empty.launch
+x,y,z ausrostopic echo /uav1/ground_truth/state (siehe ui)
+
+def pose_callback(data):
+    x_p.set("{0:.2f}".format(data.pose.pose.position.x))
+    y_p.set("{0:.2f}".format(data.pose.pose.position.y))
+    z_p.set("{0:.2f}".format(data.pose.pose.position.z))
+    
+rospy.Subscriber("/ground_truth/state", Odometry , pose_callback)
+
+
+1. laser scan nutzen, um abmessungen (x,y) des feldes zu bestimmen und in etwa die höhe 
+2. abmessungen nutzen, um pfad der drohne zu bestimmen
+3. sonar_heigt als funktion von x und y gibt die höhe des getreides an
+
+roslaunch hector_quadrotor_demo aro.launch 
+/sonar_height
+/tf --> frame_id 'world' --> child_id 'base_footprint' --> x und y 
+/tf --> frame_id 'base_footprint' --> child_id 'base_stabilized' --> z
+           
+
+
+http://wiki.ros.org/hector_slam/Tutorials/MappingUsingLoggedData
+roslaunch hector_slam_launch tutorial.launch 
+rosbag play Team_Hector_MappingBox_RoboCup_2011_Rescue_Arena.bag  --clock

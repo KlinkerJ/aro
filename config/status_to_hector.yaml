@@ -1,0 +1,36 @@
+# Joystick Inputs for Twist-Message (4 DOF)
+
+axis:
+  a1: axis_left_x
+  a2: axis_left_y
+  a3: axis_right_y
+  a4: axis_l2
+  a5: axis_r2
+
+button:
+  b1: button_dpad_up
+  b2: button_dpad_down
+  #b3: button_dpad_left
+  #b4: button_dpad_right
+  #b5: button_cross
+  #b6: button_circle
+  #b7: button_square
+  #b8: button_triangle
+  #b9: button_trackpad
+  #b10: button_share
+
+inputs:
+  linear:
+    x: axis_left_y
+    y: axis_left_x
+    z: axis_right_y
+  angular:
+    z: axis_l2 - axis_r2
+    
+scales:
+  linear:
+    x: 2
+    y: 2
+    z: 5
+  angular:
+    z: 5
