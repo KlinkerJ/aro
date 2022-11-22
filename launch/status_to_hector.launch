@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- launch ds4_driver -->
+  <include file="$(find ds4_driver)/launch/ds4_driver.launch" /> 
+
+  <!-- run ds4 remote control node -->
+  <node pkg="hector_quadrotor_demo" 
+        type="status_to_hector.py" 
+        name="status_to_hector" 
+        output="screen" >
+        <rosparam command="load" file="$(find hector_quadrotor_demo)/hector_aro/config/status_to_hector.yaml" />
+  </node>
+
+</launch>
