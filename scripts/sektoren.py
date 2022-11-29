@@ -41,5 +41,5 @@ p4 = {'x': 50, 'y': 0 }
 
 spalten = getSektorForEckpunkte(p1, p2, p3, p4, 2)
 print(spalten)
-writeToCSV(spalten)
+#writeToCSV(spalten)
 
