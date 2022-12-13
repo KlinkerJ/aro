@@ -1,4 +1,5 @@
 import csv
+import db_tests
 
 def getSpaltenElements(x, yMin, yMax, maxLength): 
     elements = []
@@ -40,6 +41,6 @@ p3 = {'x': 50, 'y': 20 }
 p4 = {'x': 50, 'y': 0 }
 
 spalten = getSektorForEckpunkte(p1, p2, p3, p4, 2)
-print(spalten)
+#db_tests.create_segments_in_db(spalten)
 #writeToCSV(spalten)
 
