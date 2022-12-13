@@ -5,6 +5,8 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Range
+import numpy as np
+import math
 
 # vllt argument für remote controll?!
 class HectorNode(object):
@@ -84,6 +86,8 @@ class HectorNode(object):
         e_y = y - self.odometry.pose.pose.position.y # Error in y
         e_z = z - self.odometry.pose.pose.position.z # Error in z
 
+        e_x, e_y = self.rotationShift(e_x, e_y, self.odometry.pose.pose.orientation.z)
+
         cmd_vel = Twist()
 
         while abs(e_x) > tol or abs(e_y) > tol or abs(e_z > tol):
@@ -102,6 +106,7 @@ class HectorNode(object):
             e_y = y - self.odometry.pose.pose.position.y # Error in y
             e_z = z - self.odometry.pose.pose.position.z # Error in z
 
+            e_x, e_y = self.rotationShift(e_x, e_y, self.odometry.pose.pose.orientation.z)
 
         else:
             cmd_vel.linear.x = 0
@@ -110,14 +115,35 @@ class HectorNode(object):
             self.cmd_publisher.publish(cmd_vel)
 
 
+    def rotationShift(self, x, y, theta):
+        rot = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]) # Drehmatrix
+        rot = np.linalg.inv(rot) # Inverse Drehmatrix
+        new_x = (rot[0][0] * x) + (rot[0][1] * y)
+        new_y = (rot[1][0] * x) + (rot[1][1] * y)
+        return new_x, new_y
+
+    def quaterionToRads(self, data): # aus ui_hector_quad.py
+        x = data.pose.pose.orientation.x
+        y = data.pose.pose.orientation.y
+        z = data.pose.pose.orientation.z
+        w = data.pose.pose.orientation.w
+
+        t3 = 2.0 * (w * z + x * y)
+        t4 = 1.0 - 2.0 * (y * y + z * z)
+        yawZActual = math.atan2(t3, t4)
+        if yawZActual < 0:
+            yawZActual = 2*math.pi + yawZActual
+
+        return yawZActual
+
     def pose_callback(self, data):
 
-        # save actual drone position (x,y,z [m]) in global Odometry variable
+        # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(data.pose.pose.position.x, 2)
         self.odometry.pose.pose.position.y = round(data.pose.pose.position.y, 2)
         self.odometry.pose.pose.position.z = round(data.pose.pose.position.z, 2)
 
-        #self.odometry.pose.pose.position.x = "{0:.2f}".format(data.pose.pose.position.x)
+        self.odometry.pose.pose.orientation.z = round(self.quaterionToRads(data), 2)
 
     def calculate_current_segment(self):
         current_y = self.odometry.pose.pose.position.y
