@@ -1,13 +1,14 @@
 import csv
 import db_tests
 
-def getSpaltenElements(x, yMin, yMax, maxLength): 
+
+def getSpaltenElements(x, yMin, yMax, maxLength):
     elements = []
-    elements.append([x, yMin + maxLength / 2 ])
+    elements.append([x, yMin + maxLength / 2])
 
     while elements[-1][1] < yMax - maxLength:
-        elements.append([ elements[-1][0], elements[-1][1] + maxLength ])
-    
+        elements.append([elements[-1][0], elements[-1][1] + maxLength])
+
     return elements
 
 
@@ -23,7 +24,9 @@ def getSektorForEckpunkte(p1, p2, p3, p4, maxLength):
 
     return spalten
 
+
 def writeToCSV(spalten):
+    # not needed anymore
     f = open('spalten.csv', 'w')
 
     writer = csv.writer(f)
@@ -35,12 +38,12 @@ def writeToCSV(spalten):
 
     f.close()
 
-p1 = {'x': 100, 'y': 0 }
-p2 = {'x': 100, 'y': 20 }
-p3 = {'x': 50, 'y': 20 }
-p4 = {'x': 50, 'y': 0 }
+
+p1 = {'x': 10, 'y': 0}
+p2 = {'x': 10, 'y': 4}
+p3 = {'x': 0, 'y': 4}
+p4 = {'x': 0, 'y': 0}
 
 spalten = getSektorForEckpunkte(p1, p2, p3, p4, 2)
-#db_tests.create_segments_in_db(spalten)
-#writeToCSV(spalten)
-
+db_tests.create_segments_in_db(spalten)
+# writeToCSV(spalten)
