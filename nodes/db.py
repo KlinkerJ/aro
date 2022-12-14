@@ -56,6 +56,26 @@ def get_constants():
     return {min_x: min_x, max_x: max_x, min_y: min_y, max_y: max_y, segmentsize: segmentsize, tolerance: tolerance}
 
 
+def get_current_segment(current_x, current_y, tolerance):
+    # get current segment
+    current_segment = Segments.select().where(Segments.sm_x.between(current_x - tolerance, current_x + tolerance),
+                                              Segments.sm_y.between(current_y - tolerance, current_y + tolerance)).get()
+    return current_segment
+
+
+def get_segment_for_id(id):
+    # get current segment
+    segment = Segments.select().where(Segments.id == id).get()
+    return segment
+
+
+def save_heights_for_segment(segment, heights):
+    mean = sum(heights) / len(heights)
+    segment.height = mean
+    segment.save()
+    return segment
+
+
 def calculate_first_point(min_x, min_y, max_y, margin):
     # start on segment with minimal x and minimal y
     print("First Point:", min_x, min_y - (margin + 1))
