@@ -34,7 +34,7 @@ class HectorNode(object):
         rospy.Subscriber("/measure", Empty, self.start_measure_callback)
 
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist)
-        #self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+        # self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
         # read CSV -> Eckpunkte erfasst
         # getSektorForEckpunkte()
@@ -73,6 +73,8 @@ class HectorNode(object):
 
     def start_measure_callback(self):
         constants = db.get_constants()
+        # write constants to object
+        self.constants = constants
         # get first point
         margin = 2  # 2m margin, how much southern should the drone start to first segment
         first_point = db.calculate_first_point(
@@ -173,17 +175,20 @@ class HectorNode(object):
 
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
-
-        print(round(data.range, 2))
-        # current_sm = self.calculate_current_segment()
-        # tol = 1 # 1m
-        # if abs(self.odometry.pose.pose.position.x - current_sm[0]) < tol and abs(self.odometry.pose.pose.position.y - current_sm[1]) < tol:
-        #     # sind im Bereich eines Segmentes -> Wert wird verwendet
-        #     index = self.currentYs.index(current_sm[1])
-        #     if len(self.heightsForSpalte) < index + 1:
-        #         self.heightsForSpalte.append([])
-        #     else:
-        #         self.heightsForSpalte[index].append(round(data.range, 2))
+        print("Sonar Height:", round(data.range, 2))
+        current_segment = db.get_current_segment(
+            self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)
+        if self.current_segment == current_segment.id:
+            # append height
+            self.heights.append(round(data.range, 2))
+        else:
+            # save heights for last segment
+            last_segment = db.get_segment_by_id(self.current_segment)
+            db.save_heights(self.heights, last_segment)
+            # set new segment
+            self.current_segment = current_segment.id
+            self.heights = []
+            self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
 
@@ -212,13 +217,6 @@ class HectorNode(object):
             yawZActual = 2*math.pi + yawZActual
 
         return yawZActual
-
-    # calculate the current segment based on the drone position
-    def calculate_current_segment(self):
-        current_y = self.odometry.pose.pose.position.y
-        current_sm = [self.currentX, min(
-            self.currentYs, key=lambda x:abs(x-current_y))]
-        return current_sm
 
 
 if __name__ == '__main__':
