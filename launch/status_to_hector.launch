@@ -9,7 +9,7 @@
         type="status_to_hector.py" 
         name="status_to_hector" 
         output="screen" >
-        <rosparam command="load" file="$(find hector_quadrotor_demo)/hector_aro/config/status_to_hector.yaml" />
+        <rosparam command="load" file="$(find aro)/config/status_to_hector.yaml" />
   </node>
 
 </launch>
