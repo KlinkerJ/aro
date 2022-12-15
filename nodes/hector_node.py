@@ -29,9 +29,9 @@ class HectorNode(object):
 
         rospy.Subscriber("/release", Empty, self.release_callback)
 
-        rospy.Subscriber("/button_pressed", Empty,
-                         self.button_pressed_callback)
-        rospy.Subscriber("/measure", Empty, self.start_measure_callback)
+        #rospy.Subscriber("/button_pressed", Empty, self.button_pressed_callback)
+
+        #rospy.Subscriber("/measure", Empty, self.start_measure_callback)
 
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist)
         # self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
@@ -51,7 +51,17 @@ class HectorNode(object):
 
         # flypoints müssen aus den segmentmittelpunkten erstellt werden
 
-    def button_pressed_callback(self):
+    def release_callback(self, empty_msg):
+
+        # release drone with empty pub on '/release' - topic
+        for point in self.flypoints:
+            self.flyToPosition(point)
+
+        self.button_pressed()
+
+        return
+
+    def button_pressed(self): # _callback
         # initialize array if not existing
         if self.corners is not []:
             self.corners = []
@@ -59,9 +69,12 @@ class HectorNode(object):
         corner = [self.odometry.pose.pose.position.x,
                   self.odometry.pose.pose.position.y]
         self.corners.append(corner)
+
+        self.calulate_segments()
+
         return
 
-    def calulate_segments_callback(self):
+    def calulate_segments(self): # _callback
         if not self.corners.length == 4:
             return
         segmentsize = 2
@@ -69,9 +82,12 @@ class HectorNode(object):
             self.corners[0], self.corners[1], self.corners[2], self.corners[3], segmentsize)
         db.create_segments_in_db(columns)
         print("Segments created in DB")
+
+        self.start_measure()
+
         return
 
-    def start_measure_callback(self):
+    def start_measure(self): # _callback
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
@@ -91,29 +107,6 @@ class HectorNode(object):
             # simulate flight
             print("Flying to next point:", next_point)
             self.flyToPosition(next_point)
-        return
-
-    def release_callback(self, data):
-
-        # release drone with empty pub on '/release' - topic
-
-        for point in self.flypoints:
-            self.flyToPosition(point)
-
-        # hier muss
-
-        # for i, spalte in enumerate(self.spalten):
-        #     spaltenanfang = self.flypoints[i][0]
-        #     spaltenende = self.flypoints[i][1]
-        #     self.currentSpalte = spalte
-        #     self.currentX = spalte[0][0]
-        #     self.currentYs = spalte.filter(...)
-
-        #     self.flyToPosition(spaltenanfang)
-        #     self.heightsForSpalte = []
-        #     self.flyToPosition(spaltenende)
-        #     self.heights.append(self.heightsForSpalte)
-
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2):
@@ -176,19 +169,19 @@ class HectorNode(object):
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
         print("Sonar Height:", round(data.range, 2))
-        current_segment = db.get_current_segment(
-            self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)
-        if self.current_segment == current_segment.id:
-            # append height
-            self.heights.append(round(data.range, 2))
-        else:
-            # save heights for last segment
-            last_segment = db.get_segment_by_id(self.current_segment)
-            db.save_heights(self.heights, last_segment)
-            # set new segment
-            self.current_segment = current_segment.id
-            self.heights = []
-            self.heights.append(round(data.range, 2))
+        # current_segment = db.get_current_segment(
+        #     self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)
+        # if self.current_segment == current_segment.id:
+        #     # append height
+        #     self.heights.append(round(data.range, 2))
+        # else:
+        #     # save heights for last segment
+        #     last_segment = db.get_segment_by_id(self.current_segment)
+        #     db.save_heights(self.heights, last_segment)
+        #     # set new segment
+        #     self.current_segment = current_segment.id
+        #     self.heights = []
+        #     self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
 
