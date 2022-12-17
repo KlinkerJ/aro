@@ -9,6 +9,7 @@ import numpy as np
 import math
 import db
 import sektoren
+import time
 
 # vllt argument für remote controll?!
 
@@ -195,8 +196,14 @@ class HectorNode(object):
                 self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
+        # battery calculation via time
+        if not self.battery_time:
+            self.battery_time = time.time()
+        else:
+            self.battery -= (time.time() - self.battery_time) * 0.0001
+            self.battery_time = time.time()
 
-        # battery calculation
+        # battery calculation via flown distance
         diff_x = abs(self.odometry.pose.pose.position.x -
                      data.pose.pose.position.x)
         diff_y = abs(self.odometry.pose.pose.position.y -
