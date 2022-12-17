@@ -61,7 +61,7 @@ class HectorNode(object):
 
         return
 
-    def button_pressed(self): # _callback
+    def button_pressed(self):  # _callback
         # initialize array if not existing
         if self.corners is not []:
             self.corners = []
@@ -74,7 +74,7 @@ class HectorNode(object):
 
         return
 
-    def calulate_segments(self): # _callback
+    def calulate_segments(self):  # _callback
         if not self.corners.length == 4:
             return
         segmentsize = 2
@@ -87,7 +87,7 @@ class HectorNode(object):
 
         return
 
-    def start_measure(self): # _callback
+    def start_measure(self):  # _callback
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
@@ -95,6 +95,12 @@ class HectorNode(object):
         margin = 2  # 2m margin, how much southern should the drone start to first segment
         first_point = db.calculate_first_point(
             constants.min_x, constants.min_y, constants.max_y, margin)
+
+        # fly to first point
+        self.flyToPosition(first_point)
+
+        # set constant to enable saving of height in sonar_callback
+        self.measurement_active = True
 
         finished = False
         while not finished:
@@ -107,6 +113,10 @@ class HectorNode(object):
             # simulate flight
             print("Flying to next point:", next_point)
             self.flyToPosition(next_point)
+
+        # set constant to disable saving of height in sonar_callback
+        self.measurement_active = True
+
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2):
@@ -115,7 +125,7 @@ class HectorNode(object):
         x = point[0]
         y = point[1]
 
-        # checking for z-value
+        # checking for z-value -> allows to fly to a position passed in 2D
         if len(point) == 3:
             z = point[2]
         else:
@@ -127,7 +137,7 @@ class HectorNode(object):
         e_z = z - self.odometry.pose.pose.position.z
 
         e_x, e_y = self.rotationShift(
-            e_x, e_y, self.odometry.pose.pose.orientation.z)
+            e_x, e_y, self.odometry.pose.pose.orientation.z)  # rotate error vector to match drone orientation
 
         cmd_vel = Twist()
 
@@ -169,21 +179,33 @@ class HectorNode(object):
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
         print("Sonar Height:", round(data.range, 2))
-        # current_segment = db.get_current_segment(
-        #     self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)
-        # if self.current_segment == current_segment.id:
-        #     # append height
-        #     self.heights.append(round(data.range, 2))
-        # else:
-        #     # save heights for last segment
-        #     last_segment = db.get_segment_by_id(self.current_segment)
-        #     db.save_heights(self.heights, last_segment)
-        #     # set new segment
-        #     self.current_segment = current_segment.id
-        #     self.heights = []
-        #     self.heights.append(round(data.range, 2))
+        if self.measurement_active:
+            current_segment = db.get_current_segment(
+                self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)  # get current segment - not sure if fast enough via DB
+            if self.current_segment == current_segment.id:
+                # append height
+                self.heights.append(round(data.range, 2))
+            else:
+                # save heights for last segment
+                last_segment = db.get_segment_by_id(self.current_segment)
+                db.save_heights(self.heights, last_segment)
+                # set new segment
+                self.current_segment = current_segment.id
+                self.heights = []
+                self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
+
+        # battery calculation
+        diff_x = abs(self.odometry.pose.pose.position.x -
+                     data.pose.pose.position.x)
+        diff_y = abs(self.odometry.pose.pose.position.y -
+                     data.pose.pose.position.y)
+        distance = math.sqrt(diff_x**2 + diff_y**2)  # flown distance
+        # 0.0001 is the battery consumption (per "meter"(?))
+        self.battery -= distance * 0.0001
+
+        # we should include something to charge the battery at position x,y,z as its homebase
 
         # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(
