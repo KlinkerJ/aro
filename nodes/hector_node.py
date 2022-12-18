@@ -144,13 +144,14 @@ class HectorNode(object):
             # limit velocity, calculate via cycle time, vmax is based on m/s
             cycle_time = time.time() - self.pid_time  # time since last cycle
             self.pid_time = time.time()  # set time for next cycle
+            vmax_cycle = vmax * cycle_time  # max velocity for cycle time
 
-            if abs(q_x) > vmax * cycle_time:
-                q_x = vmax * cycle_time * np.sign(q_x)
-            if abs(q_y) > vmax * cycle_time:
-                q_y = vmax * cycle_time * np.sign(q_y)
-            if abs(q_z) > vmax * cycle_time:
-                q_z = vmax * cycle_time * np.sign(q_z)
+            # calulate length of vector -> if longer than vmax, scale vector to vmax
+            v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
+            if v > vmax_cycle:
+                q_x = q_x * vmax_cycle / v
+                q_y = q_y * vmax_cycle / v
+                q_z = q_z * vmax_cycle / v
 
             cmd_vel.linear.x = q_x
             cmd_vel.linear.y = q_y
