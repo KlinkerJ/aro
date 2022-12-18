@@ -201,7 +201,7 @@ class HectorNode(object):
                 self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
-        # battery calculation via time (0.01% per second)
+        # battery calculation via time (0.001% per second)
         if not self.battery_time:
             self.battery_time = time.time()
         else:
@@ -214,7 +214,7 @@ class HectorNode(object):
         diff_y = abs(self.odometry.pose.pose.position.y -
                      data.pose.pose.position.y)
         distance = math.sqrt(diff_x**2 + diff_y**2)  # flown distance
-        # 0.0001 is the battery consumption per meter (0.1% per meter)
+        # 0.0001 is the battery consumption per meter (0.01% per meter)
         self.battery -= distance * 0.0001
 
         # we should include something to charge the battery at position x,y,z as its homebase
