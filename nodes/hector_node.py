@@ -12,6 +12,7 @@ import sektoren
 import time
 
 # vllt argument für remote controll?!
+# keine Ahnung was du meinst
 
 
 class HectorNode(object):
@@ -19,6 +20,7 @@ class HectorNode(object):
 
         self.sonar_offset = 0.17  # m
         self.drone_z_offset = 0.28  # m
+        self.corners = []  # array of corners, empty at start
 
         rospy.init_node('hector_node')
 
@@ -28,54 +30,42 @@ class HectorNode(object):
 
         rospy.Subscriber("/sonar_height", Range, self.sonar_callback)  # 10 Hz
 
-        rospy.Subscriber("/release", Empty, self.release_callback)
+        # release drone with empty pub on '/release' - topic
+        rospy.Subscriber("/release", Empty, self.release)
 
-        #rospy.Subscriber("/button_pressed", Empty, self.button_pressed_callback)
+        rospy.Subscriber("/set_corner", Empty, self.set_corner)
 
-        #rospy.Subscriber("/measure", Empty, self.start_measure_callback)
+        # rospy.Subscriber("/measure", Empty, self.start_measure_callback) # not necessary, because start_measure is called in calculate_segments
 
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist)
         # self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
-        # read CSV -> Eckpunkte erfasst
-        # getSektorForEckpunkte()
-        # self.spalten = []
-        # self.flypoints = []
-        # spalten als self.spalten
-        # for spalte in self.spalten:
-        # first_fly_point_y = spalten[0] - 5
-        # last_fly_point_y = spalten[-1] + 5
-        # self.flypoints.append([[first_fly_point_x, first_fly_point_y], [last_fly_point_x, last_fly_point_y]])
+    def release(self, empty_msg):
 
         # fake flypoints
         self.flypoints = [[0, 0, 10], [20, 0], [20, 20], [0, 20]]
-
-        # flypoints müssen aus den segmentmittelpunkten erstellt werden
-
-    def release_callback(self, empty_msg):
 
         # release drone with empty pub on '/release' - topic
         for point in self.flypoints:
             self.flyToPosition(point)
 
-        self.button_pressed()
-
         return
 
-    def button_pressed(self):  # _callback
-        # initialize array if not existing
-        if self.corners is not []:
-            self.corners = []
+    def set_corner(self):  # _callback
+        if self.corners.length == 4:
+            print("Already 4 corners set, please start measurement")
+            return
         # add corner to array
         corner = [self.odometry.pose.pose.position.x,
                   self.odometry.pose.pose.position.y]
         self.corners.append(corner)
 
-        self.calulate_segments()
-
+        if self.corners.length == 4:
+            self.calulate_segments()
         return
 
-    def calulate_segments(self):  # _callback
+    # calculates segments from corners, saves them in db and starts measurement
+    def calulate_segments(self):
         if not self.corners.length == 4:
             return
         segmentsize = 2
@@ -120,7 +110,7 @@ class HectorNode(object):
 
         return
 
-    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2):
+    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=0.5):
 
         # get x and y value [m] from goal position
         x = point[0]
@@ -165,6 +155,7 @@ class HectorNode(object):
         else:
             cmd_vel.linear.x = 0
             cmd_vel.linear.y = 0
+            cmd_vel.linear.z = 0
 
             self.cmd_publisher.publish(cmd_vel)
 
@@ -196,12 +187,12 @@ class HectorNode(object):
                 self.heights.append(round(data.range, 2))
 
     def pose_callback(self, data):
-        # battery calculation via time
-        if not self.battery_time:
-            self.battery_time = time.time()
+        # battery calculation via time (0.01% per second)
+        if not self.time:
+            self.time = time.time()
         else:
-            self.battery -= (time.time() - self.battery_time) * 0.0001
-            self.battery_time = time.time()
+            self.battery -= (time.time() - self.time) * 0.00001
+            self.time = time.time()
 
         # battery calculation via flown distance
         diff_x = abs(self.odometry.pose.pose.position.x -
@@ -209,7 +200,7 @@ class HectorNode(object):
         diff_y = abs(self.odometry.pose.pose.position.y -
                      data.pose.pose.position.y)
         distance = math.sqrt(diff_x**2 + diff_y**2)  # flown distance
-        # 0.0001 is the battery consumption (per "meter"(?))
+        # 0.0001 is the battery consumption per meter (0.1% per meter)
         self.battery -= distance * 0.0001
 
         # we should include something to charge the battery at position x,y,z as its homebase
