@@ -111,6 +111,8 @@ class HectorNode(object):
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=0.5):
+        # set self.pid_time to allow calculation of cycle time -> needed for velocity limit
+        self.pid_time = time.time()
 
         # get x and y value [m] from goal position
         x = point[0]
@@ -138,6 +140,17 @@ class HectorNode(object):
             q_x = e_x * p_x
             q_y = e_y * p_y
             q_z = e_z * p_z
+
+            # limit velocity, calculate via cycle time, vmax is based on m/s
+            cycle_time = time.time() - self.pid_time  # time since last cycle
+            self.pid_time = time.time()  # set time for next cycle
+
+            if abs(q_x) > vmax * cycle_time:
+                q_x = vmax * cycle_time * np.sign(q_x)
+            if abs(q_y) > vmax * cycle_time:
+                q_y = vmax * cycle_time * np.sign(q_y)
+            if abs(q_z) > vmax * cycle_time:
+                q_z = vmax * cycle_time * np.sign(q_z)
 
             cmd_vel.linear.x = q_x
             cmd_vel.linear.y = q_y
@@ -188,11 +201,11 @@ class HectorNode(object):
 
     def pose_callback(self, data):
         # battery calculation via time (0.01% per second)
-        if not self.time:
-            self.time = time.time()
+        if not self.battery_time:
+            self.battery_time = time.time()
         else:
-            self.battery -= (time.time() - self.time) * 0.00001
-            self.time = time.time()
+            self.battery -= (time.time() - self.battery_time) * 0.00001
+            self.battery_time = time.time()
 
         # battery calculation via flown distance
         diff_x = abs(self.odometry.pose.pose.position.x -
