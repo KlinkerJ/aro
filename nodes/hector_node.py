@@ -88,7 +88,7 @@ class HectorNode(object):
             constants.min_x, constants.min_y, constants.max_y, margin)
 
         # fly to first point
-        self.flyToPosition(first_point)
+        self.flyToPosition(first_point, vmax=0.2)
 
         # set constant to enable saving of height in sonar_callback
         self.measurement_active = True
