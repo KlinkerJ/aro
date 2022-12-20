@@ -2,7 +2,7 @@ from peewee import *
 
 
 # changed to relative import
-database = SqliteDatabase('../db/segments.sqlite')
+database = SqliteDatabase('/home/lennart/catkin_ws/src/aro/db/segments.sqlite')
 
 
 class UnknownField(object):
@@ -53,7 +53,9 @@ def get_constants():
         Segments.sm_x > min_x).order_by(Segments.sm_x).get().sm_x
     segmentsize = min_x_plus_1 - min_x
     tolerance = segmentsize / 2
-    return {min_x: min_x, max_x: max_x, min_y: min_y, max_y: max_y, segmentsize: segmentsize, tolerance: tolerance}
+    constants = {"min_x": min_x, "max_x": max_x, "min_y": min_y, "max_y": max_y, "segmentsize": segmentsize, "tolerance": tolerance}
+    print(constants)
+    return constants
 
 
 def get_current_segment(current_x, current_y, tolerance):
@@ -100,9 +102,9 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
         # check if most nothern segment is already measured
         try:
             segment_same_column_north = Segments.select().where(
-                Segments.sm_x.between(current_x - tolerance, current_x + tolerance), Segments.height == None).order_by(Segments.sm_y.desc()).get()
+                (Segments.sm_x.between(current_x - tolerance, current_x + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y.desc()).get()
             nextpoint = [segment_same_column_north.sm_x,
-                         segment_same_column_north.sm_y + margin + 1]
+                         segment_same_column_north.sm_y + margin + 2]
             print("Nextpoint:", nextpoint)
             return nextpoint
         except Exception as e:
@@ -110,9 +112,9 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
             # fly to next column
             try:
                 segment_next_column_south = Segments.select().where(
-                    Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance), Segments.height == None).order_by(Segments.sm_y).get()
+                    (Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y).get()
                 nextpoint = [segment_next_column_south.sm_x,
-                             segment_next_column_south.sm_y - (margin + 1)]
+                             segment_next_column_south.sm_y - (margin + 2)]
                 print("Nextpoint:", nextpoint)
                 return nextpoint
             except:
@@ -127,20 +129,20 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
         # check if most southern segment is already measured
         try:
             segment_same_column_south = Segments.select().where(
-                Segments.sm_x.between(current_x - tolerance, current_x + tolerance), Segments.height == None).order_by(Segments.sm_y).get()
+                (Segments.sm_x.between(current_x - tolerance, current_x + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y).get()
             nextpoint = [segment_same_column_south.sm_x,
-                         segment_same_column_south.sm_y - (margin + 1)]
-            print("Nextpoint:", nextpoint)
+                         segment_same_column_south.sm_y - (margin + 2)]
+            print("Nextpoint 1:", nextpoint)
             return nextpoint
         except:
             # all segments in this column are measured
             # fly to next column
             try:
                 segment_next_column_north = Segments.select().where(
-                    Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance), Segments.height == None).order_by(Segments.sm_y.desc()).get()
+                    (Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y.desc()).get()
                 nextpoint = [segment_next_column_north.sm_x,
-                             segment_next_column_north.sm_y + margin + 1]
-                print("Nextpoint:", nextpoint)
+                             segment_next_column_north.sm_y + margin + 2]
+                print("Nextpoint 2:", nextpoint)
                 return nextpoint
             except:
                 # No field left to measure

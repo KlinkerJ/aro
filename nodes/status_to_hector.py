@@ -65,6 +65,10 @@ class StatusToHector(object):
                         rospy.loginfo("Battery: %s %%", ( msg.battery_percentage * 100))
                         rospy.loginfo("USB: %s",  msg.plug_usb)
                         break
+
+                    # hier share button zum corner speichern!
+                    
+
                     
         self.prev_status =  msg
 
