@@ -105,7 +105,7 @@ class HectorNode(object):
             print("Flying to next point:", next_point)
             self.flyToPosition(next_point)
 
-        # set constant to disable saving of height in sonar_callback
+        # set constant to enable saving of height in sonar_callback
         self.measurement_active = True
 
         return
@@ -149,9 +149,10 @@ class HectorNode(object):
             # calulate length of vector -> if longer than vmax, scale vector to vmax
             v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
             if v > vmax_cycle:
-                q_x = q_x * vmax_cycle / v
-                q_y = q_y * vmax_cycle / v
-                q_z = q_z * vmax_cycle / v
+                print("VMax detected")
+                #q_x = q_x * vmax_cycle / v
+                #q_y = q_y * vmax_cycle / v
+                #q_z = q_z * vmax_cycle / v
 
             cmd_vel.linear.x = q_x
             cmd_vel.linear.y = q_y
@@ -218,6 +219,7 @@ class HectorNode(object):
         self.battery -= distance * 0.0001
 
         # we should include something to charge the battery at position x,y,z as its homebase
+
 
         # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(
