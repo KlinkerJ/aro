@@ -5,7 +5,7 @@
   <!-- show doc in command line: roslaunch aro aro.launch ——ros -->
   <arg name="rc" default="false" doc="enable ('true') or disable remote control via ds4_driver"/>
   <arg name="rviz" default="false" doc="enable ('true') or disable rviz"/>
-  <arg name="world" default="aro_field_world_v2" doc="launch specific world"/>
+  <arg name="world" default="aro_field_world_v2" doc="launch specific or generated world"/>
    
   <!-- start generated world and spawn hector quadrotor ... -->
   <group if="$(eval arg('world') == 'generated')">
@@ -16,7 +16,7 @@
       <arg name="model" value="$(find hector_quadrotor_description)/urdf/quadrotor.gazebo.xacro"/> 
       <arg name="x" value="5.0"/> 
       <arg name="y" value="0.0"/> 
-      <arg name="z" value="0.5"/> 
+      <arg name="z" value="0.3"/> 
     </include>
   </group> 
   
@@ -44,7 +44,7 @@
   
   <!-- start rviz visualization with preset config -->
   <group if="$(arg rviz)">
-    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find hector_quadrotor_demo)/rviz_cfg/outdoor_flight.rviz"/>
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find aro)/config/aro_sonar.rviz"/>
   </group> 
   
 </launch>
