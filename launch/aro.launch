@@ -5,7 +5,7 @@
   <!-- show doc in command line: roslaunch aro aro.launch ——ros -->
   <arg name="rc" default="false" doc="enable ('true') or disable remote control via ds4_driver"/>
   <arg name="rviz" default="false" doc="enable ('true') or disable rviz"/>
-  <arg name="world" default="aro_different_heights" doc="launch specific world"/>
+  <arg name="world" default="aro_field_world_v1" doc="launch specific world"/>
    
   <!-- start gazebo with world arg -->
   <include file="$(find hector_gazebo_worlds)/launch/start.launch">

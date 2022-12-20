@@ -21,6 +21,11 @@ class HectorNode(object):
         self.sonar_offset = 0.17  # m
         self.drone_z_offset = 0.28  # m
         self.corners = []  # array of corners, empty at start
+        self.battery_time = time.time()
+        self.measurement_active = False
+        self.battery = 100
+        self.current_segment = 0
+        self.heights = []
 
         rospy.init_node('hector_node')
 
@@ -43,32 +48,37 @@ class HectorNode(object):
     def release(self, empty_msg):
 
         # fake flypoints
-        self.flypoints = [[0, 0, 10], [20, 0], [20, 20], [0, 20]]
+        self.flypoints = [[19, 3, 10], [19, 43], [3, 43], [3, 3]]
 
         # release drone with empty pub on '/release' - topic
+        self.flyToPosition([3, 3, 6])
         for point in self.flypoints:
-            self.flyToPosition(point)
+            #self.flyToPosition(point)
+            self.corners.append([point[0], point[1]])
+
+        self.calulate_segments()
 
         return
 
     def set_corner(self):  # _callback
-        if self.corners.length == 4:
-            print("Already 4 corners set, please start measurement")
+        if len(self.corners) == 4:
+            print("Already 4 corners set, starting measurement")
+            self.calulate_segments()
             return
         # add corner to array
         corner = [self.odometry.pose.pose.position.x,
                   self.odometry.pose.pose.position.y]
         self.corners.append(corner)
 
-        if self.corners.length == 4:
+        if len(self.corners) == 4:
             self.calulate_segments()
         return
 
     # calculates segments from corners, saves them in db and starts measurement
     def calulate_segments(self):
-        if not self.corners.length == 4:
+        if not len(self.corners) == 4:
             return
-        segmentsize = 2
+        segmentsize = 4
         columns = sektoren.getSektorForEckpunkte(
             self.corners[0], self.corners[1], self.corners[2], self.corners[3], segmentsize)
         db.create_segments_in_db(columns)
@@ -85,7 +95,7 @@ class HectorNode(object):
         # get first point
         margin = 2  # 2m margin, how much southern should the drone start to first segment
         first_point = db.calculate_first_point(
-            constants.min_x, constants.min_y, constants.max_y, margin)
+            constants['min_x'], constants['min_y'], constants['max_y'], margin)
 
         # fly to first point
         self.flyToPosition(first_point, vmax=0.2)
@@ -97,7 +107,7 @@ class HectorNode(object):
         while not finished:
             # get next point
             next_point = db.calculate_next_point(
-                constants.min_x, constants.max_x, constants.min_y, constants.max_y, constants.segmentsize, constants.tolerance, margin, self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
+                constants['min_x'], constants['max_x'], constants['min_y'], constants['max_y'], constants['segmentsize'], constants['tolerance'], margin, self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
             if not next_point:
                 finished = True
             # fly to next point
@@ -149,10 +159,11 @@ class HectorNode(object):
             # calulate length of vector -> if longer than vmax, scale vector to vmax
             v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
             if v > vmax_cycle:
-                print("VMax detected")
-                #q_x = q_x * vmax_cycle / v
-                #q_y = q_y * vmax_cycle / v
-                #q_z = q_z * vmax_cycle / v
+                # print("VMax detected")
+                # q_x = q_x * vmax_cycle / v
+                # q_y = q_y * vmax_cycle / v
+                # q_z = q_z * vmax_cycle / v
+                pass
 
             cmd_vel.linear.x = q_x
             cmd_vel.linear.y = q_y
@@ -185,21 +196,36 @@ class HectorNode(object):
 
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
-        print("Sonar Height:", round(data.range, 2))
+        # print("Sonar Height:", round(data.range, 2))
         if self.measurement_active:
-            current_segment = db.get_current_segment(
-                self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants.tolerance)  # get current segment - not sure if fast enough via DB
-            if self.current_segment == current_segment.id:
-                # append height
-                self.heights.append(round(data.range, 2))
+            try:
+                current_segment = db.get_current_segment(
+                    self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
+            except:
+                print("No current Segment")
+                if len(self.heights) > 0:
+                    last_segment = db.get_segment_for_id(self.current_segment)
+                    db.save_heights_for_segment(last_segment, self.heights)
+                    self.current_segment = 0
+                    self.heights = []
             else:
-                # save heights for last segment
-                last_segment = db.get_segment_by_id(self.current_segment)
-                db.save_heights(self.heights, last_segment)
-                # set new segment
-                self.current_segment = current_segment.id
-                self.heights = []
-                self.heights.append(round(data.range, 2))
+                if self.current_segment == 0:
+                    # set new segment
+                    self.current_segment = current_segment.id
+                    self.heights = []
+                    self.heights.append(round(data.range, 2))
+                elif self.current_segment == current_segment.id:
+                    # append height
+                    self.heights.append(round(data.range, 2))
+                else:
+                    # save heights for last segment
+                    last_segment = db.get_segment_for_id(self.current_segment)
+                    db.save_heights_for_segment(last_segment, self.heights)
+                    # set new segment
+                    self.current_segment = current_segment.id
+                    self.heights = []
+                    self.heights.append(round(data.range, 2))
+
 
     def pose_callback(self, data):
         # battery calculation via time (0.001% per second)
