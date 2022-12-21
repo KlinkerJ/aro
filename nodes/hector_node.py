@@ -26,6 +26,7 @@ class HectorNode(object):
         self.battery = 100
         self.current_segment = 0
         self.heights = []
+        
 
         rospy.init_node('hector_node')
 
@@ -151,18 +152,12 @@ class HectorNode(object):
             q_y = e_y * p_y
             q_z = e_z * p_z
 
-            # limit velocity, calculate via cycle time, vmax is based on m/s
-            cycle_time = time.time() - self.pid_time  # time since last cycle
-            self.pid_time = time.time()  # set time for next cycle
-            vmax_cycle = vmax * cycle_time  # max velocity for cycle time
-
-            # calulate length of vector -> if longer than vmax, scale vector to vmax
+            # limit velocity, calulate length of vector -> if longer than vmax, scale vector to vmax
             v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
-            if v > vmax_cycle:
-                # print("VMax detected")
-                # q_x = q_x * vmax_cycle / v
-                # q_y = q_y * vmax_cycle / v
-                # q_z = q_z * vmax_cycle / v
+            if v > vmax:
+                q_x = q_x * vmax / v
+                q_y = q_y * vmax / v
+                q_z = q_z * vmax / v
                 pass
 
             cmd_vel.linear.x = q_x
