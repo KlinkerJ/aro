@@ -52,7 +52,7 @@ class HectorNode(object):
         self.flypoints = [[19, 3, 10], [19, 43], [3, 43], [3, 3]]
 
         # release drone with empty pub on '/release' - topic
-        self.flyToPosition([3, 3, 6])
+        self.flyToPosition([3, 3, 4.2])
         for point in self.flypoints:
             #self.flyToPosition(point)
             self.corners.append([point[0], point[1]])
@@ -219,10 +219,10 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(round(data.range, 2))
+                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
                 elif self.current_segment == current_segment.id:
                     # append height
-                    self.heights.append(round(data.range, 2))
+                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
                 else:
                     # save heights for last segment
                     last_segment = db.get_segment_for_id(self.current_segment)
@@ -230,7 +230,7 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(round(data.range, 2))
+                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
 
 
     def pose_callback(self, data):
