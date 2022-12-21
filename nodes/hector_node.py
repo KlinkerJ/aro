@@ -219,10 +219,10 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
                 elif self.current_segment == current_segment.id:
                     # append height
-                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
                 else:
                     # save heights for last segment
                     last_segment = db.get_segment_for_id(self.current_segment)
@@ -230,7 +230,7 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(self.odometry.pose.pose.position.z - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
 
 
     def pose_callback(self, data):
