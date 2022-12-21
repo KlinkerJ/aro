@@ -26,7 +26,7 @@ class HectorNode(object):
         self.battery = 100
         self.current_segment = 0
         self.heights = []
-        
+
 
         rospy.init_node('hector_node')
 
@@ -99,7 +99,7 @@ class HectorNode(object):
             constants['min_x'], constants['min_y'], constants['max_y'], margin)
 
         # fly to first point
-        self.flyToPosition(first_point, vmax=0.2)
+        self.flyToPosition(first_point, vmax=2)
 
         # set constant to enable saving of height in sonar_callback
         self.measurement_active = True
@@ -114,14 +114,11 @@ class HectorNode(object):
             # fly to next point
             # simulate flight
             print("Flying to next point:", next_point)
-            self.flyToPosition(next_point)
-
-        # set constant to enable saving of height in sonar_callback
-        self.measurement_active = True
+            self.flyToPosition(next_point, vmax=0.6, ramp=0.25)
 
         return
 
-    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=0.5):
+    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp = 0.4):
         # set self.pid_time to allow calculation of cycle time -> needed for velocity limit
         self.pid_time = time.time()
 
@@ -160,11 +157,25 @@ class HectorNode(object):
                 q_z = q_z * vmax / v
                 pass
 
+            # limit acceleration, calculate length of vector -> if larger than 140% of last cycle, scale vector to 140% of last cycle
+            try:
+                v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
+                v_old = math.sqrt(self.cmd_vel.linear.x**2 + self.cmd_vel.linear.y**2 + self.cmd_vel.linear.z**2)
+                f = v / v_old
+                if f > 1 + ramp:
+                    print("Limiting acceleration, factor:", f)
+                    q_x = q_x / v * (1 + ramp)
+                    q_y = q_y / v * (1 + ramp)
+                    q_z = q_z / v * (1 + ramp)
+            except Exception as e:
+                print(e)
+
             cmd_vel.linear.x = q_x
             cmd_vel.linear.y = q_y
             cmd_vel.linear.z = q_z
 
             self.cmd_publisher.publish(cmd_vel)
+            self.cmd_vel = cmd_vel
 
             e_x = x - self.odometry.pose.pose.position.x  # Error in x
             e_y = y - self.odometry.pose.pose.position.y  # Error in y
