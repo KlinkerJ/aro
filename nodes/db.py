@@ -15,7 +15,7 @@ class BaseModel(Model):
 
 
 class Segments(BaseModel):
-    height = IntegerField(null=True)
+    height = FloatField(null=True)
     sm_x = IntegerField(null=True)
     sm_y = IntegerField(null=True)
 
@@ -73,7 +73,7 @@ def get_segment_for_id(id):
 
 def save_heights_for_segment(segment, heights):
     mean = sum(heights) / len(heights)
-    segment.height = mean
+    segment.height = round(mean, 2)
     segment.save()
     return segment
 

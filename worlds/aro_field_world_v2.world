@@ -93,7 +93,7 @@
         <collision name='collision'>
           <geometry>
             <mesh>
-              <uri>model://aro_field_v1/meshes/field_v1.stl</uri>
+              <uri>file:///home/lennart/catkin_ws/src/aro/worlds/field_v1.stl</uri>
               <scale>0.0008 0.0008 0.0008</scale>
             </mesh>
           </geometry>
@@ -114,7 +114,7 @@
         <visual name='visual'>
           <geometry>
             <mesh>
-              <uri>model://aro_field_v1/meshes/field_v1.stl</uri>
+              <uri>file:///home/lennart/catkin_ws/src/aro/worlds/field_v1.stl</uri>
               <scale>0.0008 0.0008 0.0008</scale>
             </mesh>
           </geometry>

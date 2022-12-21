@@ -42,7 +42,7 @@
     <include file="$(find aro)/launch/status_to_hector.launch" /> 
   </group> 
   
-  <!-- start rviz visualization with preset config -->
+  <!-- start rviz visualization with sonar config -->
   <group if="$(arg rviz)">
     <node pkg="rviz" type="rviz" name="rviz" args="-d $(find aro)/config/aro_sonar.rviz"/>
   </group> 
