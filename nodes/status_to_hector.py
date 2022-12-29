@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
 import rospy
-from ds4_driver.msg import Status
+import subprocess
+from ds4_driver.msg import Status, Feedback
 from geometry_msgs.msg import Twist
+from std_msgs.msg import Empty
 
 class StatusToHector(object):
     def __init__(self):
@@ -26,8 +28,23 @@ class StatusToHector(object):
         # /cmd_vel
         self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
 
+        # /set_corner
+        self.pub_corner = rospy.Publisher('set_corner', Empty, queue_size=1)
+
+        # /release
+        self.pub_release = rospy.Publisher('release', Empty, queue_size=1)
+
+        # /set_feedback
+        self.feedback = Feedback()
+        self.pub_feedback = rospy.Publisher('set_feedback', Feedback, queue_size=1)
+        self.feedback.set_led = True
+        self.feedback.led_g = 1 
+        
+
 
     def cb_status(self, msg):
+
+        self.pub_feedback.publish(self.feedback)
 
         self.cb_axis(msg)
 
@@ -66,12 +83,22 @@ class StatusToHector(object):
                         rospy.loginfo("USB: %s",  msg.plug_usb)
                         break
 
-                    # hier share button zum corner speichern!
-                    
+                    elif attr == 'button_share':
+                        empty_msg = Empty()
+                        self.pub_corner.publish(empty_msg)
+                        break
 
+                    elif attr == 'button_options':
+                        self.feedback.led_g = 0
+                        self.feedback.led_r = 1  
+                        self.pub_feedback.publish(self.feedback)
+                        empty_msg = Empty()
+                        self.pub_release.publish(empty_msg)
+                        rospy.loginfo("rosnode kill /uav1/status_to_hector")
+                        subprocess.call(["/home/lennart/catkin_ws/src/aro/scripts/roskill_status_to_hector.sh"])
+                        break
                     
         self.prev_status =  msg
-
 
 
 if __name__ == '__main__':
