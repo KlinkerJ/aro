@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import rospy
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
@@ -16,7 +17,7 @@ import time
 
 
 class HectorNode(object):
-    def __init__(self):
+    def __init__(self, ns):
 
         self.sonar_offset = 0.17  # m
         self.drone_z_offset = 0.28  # m
@@ -26,6 +27,7 @@ class HectorNode(object):
         self.battery = 100
         self.current_segment = 0
         self.heights = []
+        self.cmd_vel = Twist()
 
 
         rospy.init_node('hector_node')
@@ -39,7 +41,7 @@ class HectorNode(object):
         # release drone with empty pub on '/release' - topic
         rospy.Subscriber("/release", Empty, self.release)
 
-        rospy.Subscriber("/set_corner", Empty, self.set_corner)
+        rospy.Subscriber("/set_corner", Empty, self.set_corner_callback)
 
         # rospy.Subscriber("/measure", Empty, self.start_measure_callback) # not necessary, because start_measure is called in calculate_segments
 
@@ -48,34 +50,47 @@ class HectorNode(object):
 
     def release(self, empty_msg):
 
+        if not len(self.corners) == 4:
+            return
+
+        #self.flyToPosition([0, 0, 4.5])
+        self.start_measure()
+
         # fake flypoints
-        self.flypoints = [[19, 3, 10], [19, 43], [3, 43], [3, 3]]
+        #self.flypoints = [[19, 3, 10], [19, 43], [3, 43], [3, 3]]
 
         # release drone with empty pub on '/release' - topic
-        self.flyToPosition([3, 3, 4.2])
-        for point in self.flypoints:
+        #self.flyToPosition([3, 3, 4.2])
+        #for point in self.flypoints:
             #self.flyToPosition(point)
-            self.corners.append([point[0], point[1]])
+            #self.corners.append([point[0], point[1]])
 
-        self.calulate_segments()
+        #self.calulate_segments()
 
         return
 
-    def set_corner(self):  # _callback
-        if len(self.corners) == 4:
-            print("Already 4 corners set, starting measurement")
-            self.calulate_segments()
-            return
-        # add corner to array
-        corner = [self.odometry.pose.pose.position.x,
-                  self.odometry.pose.pose.position.y]
-        self.corners.append(corner)
 
-        if len(self.corners) == 4:
-            self.calulate_segments()
+    def set_corner_callback(self, empty_msg): 
+
+        if len(self.corners) < 4:
+            corner = [self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y]
+            #corner = [int(self.odometry.pose.pose.position.x), int(self.odometry.pose.pose.position.y)]
+            self.corners.append(corner)
+
+            rospy.loginfo(str(len(self.corners)) + ". corner set.")
+            
+            if len(self.corners) == 4:
+                rospy.loginfo(self.corners)
+                rospy.loginfo("Start calculating segements.")
+                self.calulate_segments()
+
+        elif len(self.corners) >= 4:
+            rospy.logwarn("Already 4 corners set; segments have already been calculated.")
+            
         return
 
-    # calculates segments from corners, saves them in db and starts measurement
+
+    # calculates segments from corners and saves them in db
     def calulate_segments(self):
         if not len(self.corners) == 4:
             return
@@ -83,13 +98,12 @@ class HectorNode(object):
         columns = sektoren.getSektorForEckpunkte(
             self.corners[0], self.corners[1], self.corners[2], self.corners[3], segmentsize)
         db.create_segments_in_db(columns)
-        print("Segments created in DB")
-
-        self.start_measure()
-
+        rospy.loginfo("Segments created in DB.")
         return
 
-    def start_measure(self):  # _callback
+
+    def start_measure(self): 
+        rospy.loginfo("Starting the measurement.")
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
@@ -113,7 +127,7 @@ class HectorNode(object):
                 finished = True
             # fly to next point
             # simulate flight
-            print("Flying to next point:", next_point)
+            rospy.loginfo("Flying to next point:" + str(next_point))
             self.flyToPosition(next_point, vmax=0.6, ramp=0.25)
 
         return
@@ -219,10 +233,10 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
                 elif self.current_segment == current_segment.id:
                     # append height
-                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
                 else:
                     # save heights for last segment
                     last_segment = db.get_segment_for_id(self.current_segment)
@@ -230,7 +244,7 @@ class HectorNode(object):
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
-                    self.heights.append(round(self.odometry.pose.pose.position.z , 2) - round(data.range, 2))
+                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
 
 
     def pose_callback(self, data):
@@ -251,7 +265,6 @@ class HectorNode(object):
         self.battery -= distance * 0.0001
 
         # we should include something to charge the battery at position x,y,z as its homebase
-
 
         # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(
@@ -282,8 +295,11 @@ class HectorNode(object):
 
 if __name__ == '__main__':
 
+    filename = sys.argv[0]
+    namespace = sys.argv[1]
+
     try:
-        HectorNode()
+        HectorNode(namespace)
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo(" Error ")

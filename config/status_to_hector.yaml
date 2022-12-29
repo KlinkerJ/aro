@@ -16,8 +16,9 @@ button:
   #b6: button_circle
   #b7: button_square
   #b8: button_triangle
-  #b9: button_trackpad
-  #b10: button_share
+  b9: button_trackpad
+  b10: button_share
+  b11: button_options
 
 inputs:
   linear:
@@ -33,4 +34,4 @@ scales:
     y: 2
     z: 5
   angular:
-    z: 5
+    z: 4
