@@ -1,6 +1,5 @@
 from peewee import *
 
-
 # changed to relative import
 database = SqliteDatabase('/home/lennart/catkin_ws/src/aro/db/segments.sqlite')
 
@@ -121,7 +120,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                 # No field left to measure
                 print("No field left to measure")
                 # what should we do?
-                return
+                return []
 
     elif (current_y > max_y + tolerance):
         # drone is northern (positive y) of field
@@ -148,8 +147,9 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                 # No field left to measure
                 print("No field left to measure")
                 # what should we do?
-                return
+                return []
     elif (current_y > min_y - tolerance and current_y < max_y + tolerance):
         # drone is on field
         # what should we do?
-        return
+        return []
+
