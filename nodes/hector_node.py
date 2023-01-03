@@ -17,8 +17,9 @@ import time
 
 
 class HectorNode(object):
-    def __init__(self, ns):
+    def __init__(self, dronetype):
 
+        self.dronetype = dronetype # 1 = measurement, 2 = fertilization
         self.sonar_offset = 0.17  # m
         self.drone_z_offset = 0.28  # m
         self.corners = []  # array of corners, empty at start
@@ -28,6 +29,7 @@ class HectorNode(object):
         self.current_segment = 0
         self.heights = []
         self.cmd_vel = Twist()
+        self.fertilization_speed = 0
 
 
         rospy.init_node('hector_node')
@@ -39,56 +41,36 @@ class HectorNode(object):
         rospy.Subscriber("/sonar_height", Range, self.sonar_callback)  # 10 Hz
 
         # release drone with empty pub on '/release' - topic
-        rospy.Subscriber("/release", Empty, self.release)
+        rospy.Subscriber("/release", Empty, self.release_callback)
+        
+        # pub drone control velocity
+        self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1) 
 
-        rospy.Subscriber("/set_corner", Empty, self.set_corner_callback)
+    def release_callback(self, empty_msg):
 
-        # rospy.Subscriber("/measure", Empty, self.start_measure_callback) # not necessary, because start_measure is called in calculate_segments
+        rospy.logwarn("release of drone: " + str(self.dronetype))
+        
+        if self.dronetype == 1:
+            
+            #self.flypoints = [[19, 3], [19, 43], [3, 43], [3, 3]] # original
+            self.flypoints = [[19, 3], [19, 12], [3, 12], [3, 3]] # faster
 
-        self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist)
-        # self.pub_vel = rospy.Publisher('cmd_vel', Twist, queue_size=1)
+            # release drone with empty pub on '/release' - topic
+            self.flyToPosition([3, 3, 4.2])
+            for point in self.flypoints:
+                #self.flyToPosition(point)
+                self.corners.append([point[0], point[1]])
 
-    def release(self, empty_msg):
-
-        if not len(self.corners) == 4:
+            self.calulate_segments()
+            self.start_measure()
+            return
+        
+        if self.dronetype == 2:
+            #fly to all points and fertilize
+            self.fertilize()
             return
 
-        #self.flyToPosition([0, 0, 4.5])
-        self.start_measure()
-
-        # fake flypoints
-        #self.flypoints = [[19, 3, 10], [19, 43], [3, 43], [3, 3]]
-
-        # release drone with empty pub on '/release' - topic
-        #self.flyToPosition([3, 3, 4.2])
-        #for point in self.flypoints:
-            #self.flyToPosition(point)
-            #self.corners.append([point[0], point[1]])
-
-        #self.calulate_segments()
-
         return
-
-
-    def set_corner_callback(self, empty_msg): 
-
-        if len(self.corners) < 4:
-            corner = [self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y]
-            #corner = [int(self.odometry.pose.pose.position.x), int(self.odometry.pose.pose.position.y)]
-            self.corners.append(corner)
-
-            rospy.loginfo(str(len(self.corners)) + ". corner set.")
-            
-            if len(self.corners) == 4:
-                rospy.loginfo(self.corners)
-                rospy.loginfo("Start calculating segements.")
-                self.calulate_segments()
-
-        elif len(self.corners) >= 4:
-            rospy.logwarn("Already 4 corners set; segments have already been calculated.")
-            
-        return
-
 
     # calculates segments from corners and saves them in db
     def calulate_segments(self):
@@ -112,6 +94,8 @@ class HectorNode(object):
         first_point = db.calculate_first_point(
             constants['min_x'], constants['min_y'], constants['max_y'], margin)
 
+        #first_point.append(5) # fly to 5 meter higth
+
         # fly to first point
         self.flyToPosition(first_point, vmax=2)
 
@@ -123,12 +107,24 @@ class HectorNode(object):
             # get next point
             next_point = db.calculate_next_point(
                 constants['min_x'], constants['max_x'], constants['min_y'], constants['max_y'], constants['segmentsize'], constants['tolerance'], margin, self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
-            if not next_point:
+            rospy.logwarn("Nextpoint: " + str(next_point))
+            if next_point == []:
                 finished = True
+                break
             # fly to next point
             # simulate flight
             rospy.loginfo("Flying to next point:" + str(next_point))
             self.flyToPosition(next_point, vmax=0.6, ramp=0.25)
+
+        return
+
+    def fertilize(self):
+        rospy.loginfo("Starting Fertilization.")
+        constants = db.get_constants()
+        # write constants to object
+        self.constants = constants
+        # gain height
+        self.flyToPosition([3, 3, 4.2])
 
         return
 
@@ -150,7 +146,7 @@ class HectorNode(object):
         e_x = x - self.odometry.pose.pose.position.x
         e_y = y - self.odometry.pose.pose.position.y
         e_z = z - self.odometry.pose.pose.position.z
-
+         
         e_x, e_y = self.rotationShift(
             e_x, e_y, self.odometry.pose.pose.orientation.z)  # rotate error vector to match drone orientation
 
@@ -158,6 +154,8 @@ class HectorNode(object):
 
         # p - controller for position "navigation"
         while abs(e_x) > tol or abs(e_y) > tol or abs(e_z > tol):
+            
+            #rospy.logwarn(str(e_x) + str(e_y))
 
             q_x = e_x * p_x
             q_y = e_y * p_y
@@ -170,7 +168,15 @@ class HectorNode(object):
                 q_y = q_y * vmax / v
                 q_z = q_z * vmax / v
                 pass
-
+            
+            if self.dronetype == 2 and self.fertilization_speed > 0:
+                rospy.logwarn("Limiting Fertiliazion Speed")
+                v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
+                if v > self.fertilization_speed:
+                    q_x = q_x * self.fertilization_speed / v
+                    q_y = q_y * self.fertilization_speed / v
+                    q_z = q_z * self.fertilization_speed / v
+                    
             # limit acceleration, calculate length of vector -> if larger than 140% of last cycle, scale vector to 140% of last cycle
             try:
                 v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
@@ -205,6 +211,7 @@ class HectorNode(object):
 
             self.cmd_publisher.publish(cmd_vel)
 
+
     # controller for planar rotational shift (x-y-plane, rotation about z)
     def rotationShift(self, x, y, theta):
         rot = np.array([[np.cos(theta), -np.sin(theta)],
@@ -217,12 +224,12 @@ class HectorNode(object):
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
         # print("Sonar Height:", round(data.range, 2))
-        if self.measurement_active:
+        if self.measurement_active and self.dronetype == 1:
             try:
                 current_segment = db.get_current_segment(
                     self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
             except:
-                print("No current Segment")
+                #print("No current Segment")
                 if len(self.heights) > 0:
                     last_segment = db.get_segment_for_id(self.current_segment)
                     db.save_heights_for_segment(last_segment, self.heights)
@@ -245,7 +252,6 @@ class HectorNode(object):
                     self.current_segment = current_segment.id
                     self.heights = []
                     self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-
 
     def pose_callback(self, data):
         # battery calculation via time (0.001% per second)
@@ -276,6 +282,17 @@ class HectorNode(object):
 
         self.odometry.pose.pose.orientation.z = round(
             self.quaterionToRads(data), 2)
+        
+
+        #Ursache für das nicht anhalten der Drohne 2!!!
+        # if self.dronetype == 2:
+        #     try:
+        #         current_segment = db.get_current_segment(
+        #             self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
+        #         self.fertilization_speed = (3 - current_segment.height) * 10
+        #         rospy.loginfo("Fertilization Speed" + str(self.fertilization_speed))
+        #     except:
+        #         self.fertilization_speed = 0
 
     # transform coordinates and angles from quaternion to values in radiant
     def quaterionToRads(self, data):  # aus ui_hector_quad.py
@@ -296,10 +313,11 @@ class HectorNode(object):
 if __name__ == '__main__':
 
     filename = sys.argv[0]
-    namespace = sys.argv[1]
+    dronetype = sys.argv[1]
+    print(type(dronetype))
 
     try:
-        HectorNode(namespace)
+        HectorNode(int(dronetype))
         rospy.spin()
     except rospy.ROSInterruptException:
         rospy.loginfo(" Error ")
