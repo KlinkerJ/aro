@@ -1,7 +1,15 @@
 from peewee import *
+import numpy as np
+import time
+from math import sqrt
+from python_tsp.exact import solve_tsp_dynamic_programming
+from python_tsp.distances import great_circle_distance_matrix
+from python_tsp.distances import euclidean_distance_matrix
 
-# changed to relative import
+# Absolute Import
 database = SqliteDatabase('/home/lennart/catkin_ws/src/aro/db/segments.sqlite')
+# Relative Import
+# database = SqliteDatabase('./db/segments.sqlite')
 
 
 class UnknownField(object):
@@ -153,3 +161,38 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
         # what should we do?
         return []
 
+def get_segments_for_path(path, xy_list):
+    segments = []
+    for i in path:
+        segments.append(xy_list[i])
+    print(segments)
+    return segments
+
+def generate_path():
+    # function to generate shortest path between points which should be fertilized
+    # classic traveling salesman problem
+    # solved via Bellman–Held–Karp algorithm
+    # this allows us to only fly to points which should be fertilized and not fly over the complete field
+    current_position = [0, 0] # retrieve via drone pose
+    points = [current_position]
+    segments = Segments.select(Segments.sm_x, Segments.sm_y) # should be passed to this function
+    for segment in segments:
+        points.append([segment.sm_x, segment.sm_y])
+    # generate distance matrix
+    xy_list = np.asarray(points)
+    # Alle Varianten sind ungefähr gleich schnell.. Testen, welche uns bei der Drohne am besten gefällt
+    # Variante 1
+    dist = lambda p1, p2: sqrt(((p1-p2)**2).sum())
+    dm = np.asarray([[dist(p1, p2) for p2 in xy_list] for p1 in xy_list])
+    distance_matrix = great_circle_distance_matrix(xy_list)
+    permutation, distance = solve_tsp_dynamic_programming(dm)
+    v1 = get_segments_for_path(permutation, points)
+    # Variante 2
+    permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+    v2 = get_segments_for_path(permutation, points)
+    # Variante 3
+    distance_matrix = euclidean_distance_matrix(xy_list)
+    permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+    v3 = get_segments_for_path(permutation, points)
+
+generate_path()
