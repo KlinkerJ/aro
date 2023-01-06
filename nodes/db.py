@@ -194,5 +194,4 @@ def generate_path():
     distance_matrix = euclidean_distance_matrix(xy_list)
     permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
     v3 = get_segments_for_path(permutation, points)
-
-generate_path()
+    return v1, v2, v3

@@ -125,7 +125,12 @@ class HectorNode(object):
         self.constants = constants
         # gain height
         self.flyToPosition([3, 3, 4.2])
-
+        # test path generation
+        v1, v2, v3 = db.generate_path()
+        for point in v1:
+            rospy.loginfo("Using V1 for Path Generation: " + str(point))
+            # using v1 path generation
+            self.flyToPosition(point, vmax=0.6, ramp=0.25)
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp = 0.4):
