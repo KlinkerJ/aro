@@ -1,0 +1,25 @@
+uav1:
+  home:
+    x: 7.0
+    y: 1.0
+
+uav2:
+  home:
+    x: 7.0
+    y: -1.0
+
+corners:
+  p1:
+    x: 19
+    y: 3
+  p2:
+    x: 19
+    y: 12
+  p3:
+    x: 3
+    y: 12
+  p4:
+    x: 3
+    y: 3
+
+height: 4.2
