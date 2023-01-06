@@ -1,0 +1,195 @@
+<?xml version="1.0" ?>
+<sdf version="1.6">
+
+  <model name='maize_03'>
+    <pose frame=''>0 0 0 0 0 0</pose>
+    <link name='base_link'>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_01'>
+    <pose frame=''>0.3 0 0 0 0 -0.1</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_02/meshes/maize_02.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_02'>
+    <pose frame=''>-0.3 0 0 0 0 0.4</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_04'>
+    <pose frame=''>0 0.3 0 0 0 -0.2</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_02/meshes/maize_02.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_05'>
+    <pose frame=''>0 -0.3 0 0 0 -0.3</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_06'>
+    <pose frame=''>0.3 0.3 0 0 0 0.1</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_07'>
+    <pose frame=''>0.3 -0.3 0 0 0 0.3</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_02/meshes/maize_02.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_08'>
+    <pose frame=''>-0.3 0.3 0 0 0 0.1</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+    <link name='link_09'>
+    <pose frame=''>-0.3 -0.3 0 0 0 0.1</pose>
+      <collision name='collision'>
+        <pose>0 0 0.2 0 0 0</pose>
+        <geometry>
+          <box>
+            <size>0.02 0.02 0.4</size>
+          </box>
+        </geometry>
+        <max_contacts>10</max_contacts>
+      </collision>
+      <visual name='visual'>
+        <geometry>
+          <mesh>
+            <uri>model://maize_01/meshes/maize_01.dae</uri>
+            <scale>1 1 1</scale>
+          </mesh>
+        </geometry>
+      </visual>
+    </link>
+    
+  </model>
+</sdf>

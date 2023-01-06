@@ -8,6 +8,8 @@ uav2:
     x: 7.0
     y: -1.0
 
+height: 4.2
+
 corners:
   p1:
     x: 19
@@ -22,4 +24,4 @@ corners:
     x: 3
     y: 3
 
-height: 4.2
+segment_size: 4
