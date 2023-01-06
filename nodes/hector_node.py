@@ -83,7 +83,6 @@ class HectorNode(object):
             self.start_measure()
         
         elif self.dronetype == 2:
-            pass
             #fly to all points and fertilize
             self.fertilize()
         
@@ -158,7 +157,7 @@ class HectorNode(object):
         # get x and y value [m] from goal position
         rospy.logwarn(f'fly to: {point}')
 
-        # checking length of point -> allows to fly to a position passed in 1,2 or 3D
+        # checking length of point --> allows to fly to a position passed in 1,2 or 3D
         if len(point) == 1:
             x = self.odometry.pose.pose.position.x
             y = self.odometry.pose.pose.position.y
