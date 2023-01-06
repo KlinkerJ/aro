@@ -12,17 +12,13 @@ import db
 import sektoren
 import time
 
-# vllt argument für remote controll?!
-# keine Ahnung was du meinst
-
-
 class HectorNode(object):
     def __init__(self, dronetype):
 
         self.dronetype = dronetype # 1 = measurement, 2 = fertilization
         self.sonar_offset = 0.17  # m not used
         self.drone_z_offset = 0.28  # m not used
-        self.corners = []  # array of corners, empty at start
+        self.corners = []  # array of corners, empty at start <-- kann aber auch gut über yaml übergeben werden siehe weiter unten
         self.battery_time = time.time()
         self.measurement_active = False
         self.battery = 100
@@ -49,20 +45,22 @@ class HectorNode(object):
         # get drone home position and save to list
         home_pos = rospy.get_param(f'~uav{dronetype}')
         self.home_pos = list(home_pos['home'].values()) # x,y
-        rospy.logwarn(str(self.home_pos))
+        rospy.logwarn(f'uav{dronetype} home: {self.home_pos}')
         
         # get nested dictornary for corners from yaml and save to global list
         corners = rospy.get_param('~corners')
         self.corners_test = [list(corners[key].values()) for key in corners.keys()] # keys: p1-p4; values x,y
-        rospy.logwarn(str(self.corners_test))
 
         # get height for drone to do their job
         self.working_height = rospy.get_param('~height')
-        rospy.logwarn(str(self.working_height))
+
+        # get segment_size
+        self.segment_size = rospy.get_param('~height')
 
 
     def release_callback(self, empty_msg):
-
+        
+        # release drone with empty pub on '/release' - topic
         rospy.logwarn("release of drone: " + str(self.dronetype))
         
         # start drone and fly at working height
@@ -70,11 +68,9 @@ class HectorNode(object):
         
         if self.dronetype == 1:
             
-            #self.flypoints = [[19, 3], [19, 43], [3, 43], [3, 3]] # original
+            #self.flypoints = [[19, 3], [19, 43], [3, 43], [3, 3]] # original for test world
             self.flypoints = [[19, 3], [19, 12], [3, 12], [3, 3]] # faster
 
-            # release drone with empty pub on '/release' - topic
-            #self.flyToPosition([3, 3, 4.2])
             for point in self.flypoints:
                 #self.flyToPosition(point)
                 self.corners.append([point[0], point[1]])
@@ -83,7 +79,7 @@ class HectorNode(object):
             self.start_measure()
         
         elif self.dronetype == 2:
-            #fly to all points and fertilize
+            # fly to all points and fertilize
             self.fertilize()
         
         self.land(self.home_pos)
@@ -93,9 +89,9 @@ class HectorNode(object):
     def calulate_segments(self):
         if not len(self.corners) == 4:
             return
-        segmentsize = 4
+
         columns = sektoren.getSektorForEckpunkte(
-            self.corners[0], self.corners[1], self.corners[2], self.corners[3], segmentsize)
+            self.corners[0], self.corners[1], self.corners[2], self.corners[3], self.segment_size)
         db.create_segments_in_db(columns)
         rospy.loginfo("Segments created in DB.")
         return
@@ -110,8 +106,6 @@ class HectorNode(object):
         margin = 2  # 2m margin, how much southern should the drone start to first segment
         first_point = db.calculate_first_point(
             constants['min_x'], constants['min_y'], constants['max_y'], margin)
-
-        #first_point.append(5) # fly to 5 meter higth
 
         # fly to first point
         self.flyToPosition(first_point, vmax=2)
@@ -143,6 +137,7 @@ class HectorNode(object):
 
         # test path generation
         v1, v2, v3 = db.generate_path()
+        rospy.loginfo(str(v1))
         for point in v1:
             rospy.loginfo("Using V1 for Path Generation: " + str(point))
             # using v1 path generation
