@@ -25,10 +25,13 @@
             <arg name="name" value="uav1" />
             <arg name="tf_prefix" value="uav1" />
             <arg name="model" value="$(arg model)" />
-            <arg name="y" value="-1.0" />
+            <arg name="x" value="7.0" />
+            <arg name="y" value="1.0" />
+            <arg name="z" value="0.5" />
         </include>
         <!-- start uav1/hector_node-->
         <node pkg="aro" type="hector_node.py" name="hector_node" output="screen" args="1">
+            <rosparam command="load" file="$(find aro)/config/simulation.yaml" />
             <remap from="/release" to="/uav1/release"/>
             <remap from="/ground_truth/state" to="/uav1/ground_truth/state"/>
             <remap from="/sonar_height" to="/uav1/sonar_height"/>
@@ -42,10 +45,13 @@
             <arg name="name" value="uav2" />
             <arg name="tf_prefix" value="uav2" />
             <arg name="model" value="$(arg model)" />
-            <arg name="y" value="1.0" />
+            <arg name="x" value="7.0" />
+            <arg name="y" value="-1.0" />
+            <arg name="z" value="0.5" />
         </include>
         <!-- start uav2/hector_node-->
         <node pkg="aro" type="hector_node.py" name="uav2_hector_node" output="screen" args="2">
+            <rosparam command="load" file="$(find aro)/config/simulation.yaml" />
             <remap from="/release" to="/uav2/release"/>
             <remap from="/ground_truth/state" to="/uav2/ground_truth/state"/>
             <remap from="/sonar_height" to="/uav2/sonar_height"/>

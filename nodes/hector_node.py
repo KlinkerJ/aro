@@ -20,8 +20,8 @@ class HectorNode(object):
     def __init__(self, dronetype):
 
         self.dronetype = dronetype # 1 = measurement, 2 = fertilization
-        self.sonar_offset = 0.17  # m
-        self.drone_z_offset = 0.28  # m
+        self.sonar_offset = 0.17  # m not used
+        self.drone_z_offset = 0.28  # m not used
         self.corners = []  # array of corners, empty at start
         self.battery_time = time.time()
         self.measurement_active = False
@@ -45,10 +45,28 @@ class HectorNode(object):
         
         # pub drone control velocity
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1) 
+        
+        # get drone home position and save to list
+        home_pos = rospy.get_param(f'~uav{dronetype}')
+        self.home_pos = list(home_pos['home'].values()) # x,y
+        rospy.logwarn(str(self.home_pos))
+        
+        # get nested dictornary for corners from yaml and save to global list
+        corners = rospy.get_param('~corners')
+        self.corners_test = [list(corners[key].values()) for key in corners.keys()] # keys: p1-p4; values x,y
+        rospy.logwarn(str(self.corners_test))
+
+        # get height for drone to do their job
+        self.working_height = rospy.get_param('~height')
+        rospy.logwarn(str(self.working_height))
+
 
     def release_callback(self, empty_msg):
 
         rospy.logwarn("release of drone: " + str(self.dronetype))
+        
+        # start drone and fly at working height
+        self.flyToPosition([self.working_height])
         
         if self.dronetype == 1:
             
@@ -56,20 +74,20 @@ class HectorNode(object):
             self.flypoints = [[19, 3], [19, 12], [3, 12], [3, 3]] # faster
 
             # release drone with empty pub on '/release' - topic
-            self.flyToPosition([3, 3, 4.2])
+            #self.flyToPosition([3, 3, 4.2])
             for point in self.flypoints:
                 #self.flyToPosition(point)
                 self.corners.append([point[0], point[1]])
 
             self.calulate_segments()
             self.start_measure()
-            return
         
-        if self.dronetype == 2:
+        elif self.dronetype == 2:
+            pass
             #fly to all points and fertilize
             self.fertilize()
-            return
-
+        
+        self.land(self.home_pos)
         return
 
     # calculates segments from corners and saves them in db
@@ -123,8 +141,7 @@ class HectorNode(object):
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
-        # gain height
-        self.flyToPosition([3, 3, 4.2])
+
         # test path generation
         v1, v2, v3 = db.generate_path()
         for point in v1:
@@ -134,18 +151,26 @@ class HectorNode(object):
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp = 0.4):
+
         # set self.pid_time to allow calculation of cycle time -> needed for velocity limit
         self.pid_time = time.time()
 
         # get x and y value [m] from goal position
-        x = point[0]
-        y = point[1]
+        rospy.logwarn(f'fly to: {point}')
 
-        # checking for z-value -> allows to fly to a position passed in 2D
-        if len(point) == 3:
-            z = point[2]
-        else:
+        # checking length of point -> allows to fly to a position passed in 1,2 or 3D
+        if len(point) == 1:
+            x = self.odometry.pose.pose.position.x
+            y = self.odometry.pose.pose.position.y
+            z = point[0]
+        elif len(point) == 2:
+            x = point[0]
+            y = point[1]
             z = self.odometry.pose.pose.position.z
+        elif len(point) == 3:
+            x = point[0]
+            y = point[1]
+            z = point[2]
 
         # calculate errors (x,y,z) between goal position and current drone position
         e_x = x - self.odometry.pose.pose.position.x
@@ -158,9 +183,9 @@ class HectorNode(object):
         cmd_vel = Twist()
 
         # p - controller for position "navigation"
-        while abs(e_x) > tol or abs(e_y) > tol or abs(e_z > tol):
-            
-            #rospy.logwarn(str(e_x) + str(e_y))
+        while abs(e_x) > tol or abs(e_y) > tol or abs(e_z) > tol:
+
+            #rospy.loginfo('flying')
 
             q_x = e_x * p_x
             q_y = e_y * p_y
@@ -215,6 +240,11 @@ class HectorNode(object):
             cmd_vel.linear.z = 0
 
             self.cmd_publisher.publish(cmd_vel)
+
+    def land(self, pos):
+        rospy.loginfo(f'landing to: {pos}')
+        self.flyToPosition(pos)
+        self.flyToPosition([0]) # 1D list --> fly in z-axis
 
 
     # controller for planar rotational shift (x-y-plane, rotation about z)
