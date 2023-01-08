@@ -64,7 +64,11 @@ class HectorNode(object):
         rospy.logwarn("release of drone: " + str(self.dronetype))
         
         # start drone and fly at working height
-        self.flyToPosition([self.working_height])
+        self.flyToPosition([None, None, self.working_height])
+
+        # probably not the best technique: we should self-detect the height bei slowly approaching the ground and detecting the height with sonar
+        # working height: height at which the sonar detects plants with a margin
+        # not yet implemented. if the drone is too high, it should descend slowly until it is at the working height
         
         if self.dronetype == 1:
             
@@ -152,19 +156,10 @@ class HectorNode(object):
         # get x and y value [m] from goal position
         rospy.logwarn(f'fly to: {point}')
 
-        # checking length of point --> allows to fly to a position passed in 1,2 or 3D
-        if len(point) == 1:
-            x = self.odometry.pose.pose.position.x
-            y = self.odometry.pose.pose.position.y
-            z = point[0]
-        elif len(point) == 2:
-            x = point[0]
-            y = point[1]
-            z = self.odometry.pose.pose.position.z
-        elif len(point) == 3:
-            x = point[0]
-            y = point[1]
-            z = point[2]
+        # variable point format for points in 2D and 3D
+        x = self.odometry.pose.pose.position.x if point[0] == None else point[0]
+        y = self.odometry.pose.pose.position.y if point[1] == None else point[1]
+        z = self.odometry.pose.pose.position.z if len(point) < 3 else point[2]
 
         # calculate errors (x,y,z) between goal position and current drone position
         e_x = x - self.odometry.pose.pose.position.x
@@ -238,7 +233,7 @@ class HectorNode(object):
     def land(self, pos):
         rospy.loginfo(f'landing to: {pos}')
         self.flyToPosition(pos)
-        self.flyToPosition([0]) # 1D list --> fly in z-axis
+        self.flyToPosition([None, None, 0]) # 1D list --> fly in z-axis
 
 
     # controller for planar rotational shift (x-y-plane, rotation about z)
