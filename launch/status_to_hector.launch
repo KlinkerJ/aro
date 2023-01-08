@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="uav" default="1" doc="controll uav1 or uav2"/>
+
   <!-- launch ds4_driver -->
   <include file="$(find ds4_driver)/launch/ds4_driver.launch" /> 
 
   <!-- run ds4 remote control node -->
-  <node pkg="hector_quadrotor_demo" 
+  <node pkg="aro" 
         type="status_to_hector.py" 
         name="status_to_hector" 
         output="screen" >
         <rosparam command="load" file="$(find aro)/config/status_to_hector.yaml" />
+        <remap from="/cmd_vel" to="/uav$(arg uav)/cmd_vel"/>
   </node>
 
 </launch>
