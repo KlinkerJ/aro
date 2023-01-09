@@ -87,7 +87,7 @@ def save_heights_for_segment(segment, heights):
 
 def calculate_first_point(min_x, min_y, max_y, margin, segment_size):
     # start on segment with minimal x and minimal y
-    min_x =  min_x + (segment_size / 2)
+    #min_x =  min_x + (segment_size / 2)
     print("First Point:", min_x, min_y - (margin + 1))
     return [min_x, min_y - (margin + 1)]
 

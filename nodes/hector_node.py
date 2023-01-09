@@ -60,7 +60,7 @@ class HectorNode(object):
 
         # get segment_size
         self.segment_size = rospy.get_param('~segment_size')
-        self.segment_size = 2
+        #self.segment_size = 2
         
         # get marfing (how much southern should the drone start to first segment)
         self.margin = rospy.get_param('~margin')
@@ -82,7 +82,7 @@ class HectorNode(object):
 
             self.determine_working_height()
 
-            self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
+            #self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
 
             self.calulate_segments()
             self.start_measure()
@@ -175,6 +175,8 @@ class HectorNode(object):
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
+
+        self.flyToPosition([None, None, self.working_height])
 
         # test path generation
         v1, v2, v3 = db.generate_path()
