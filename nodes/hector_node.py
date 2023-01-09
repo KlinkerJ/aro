@@ -56,6 +56,7 @@ class HectorNode(object):
 
         # get segment_size
         self.segment_size = rospy.get_param('~segment_size')
+        self.segment_size = 2
         
         # get marfing (how much southern should the drone start to first segment)
         self.margin = rospy.get_param('~margin')
@@ -74,6 +75,8 @@ class HectorNode(object):
         # not yet implemented. if the drone is too high, it should descend slowly until it is at the working height
         
         if self.dronetype == 1:
+
+            self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
 
             self.calulate_segments()
             self.start_measure()
@@ -144,6 +147,8 @@ class HectorNode(object):
         # test path generation
         v1, v2, v3 = db.generate_path()
         rospy.loginfo(str(v1))
+        rospy.loginfo(str(v2))
+        rospy.loginfo(str(v3))
         for point in v1:
             rospy.loginfo("Using V1 for Path Generation: " + str(point))
             # using v1 path generation
