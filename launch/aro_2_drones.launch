@@ -16,7 +16,7 @@
     <!-- start changed generated world -->
     <group if="$(eval arg('world') == 'my_generated')">
         <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-            <arg name="world" value="$(find aro)/worlds/generated.world"/>
+            <arg name="world" value="$(find aro)/worlds/generated_moved.world"/>
         </include>
     </group>
 
@@ -33,9 +33,9 @@
             <arg name="name" value="uav1" />
             <arg name="tf_prefix" value="uav1" />
             <arg name="model" value="$(arg model)" />
-            <arg name="x" value="4.5" />
-            <arg name="y" value="-1.0" />
-            <arg name="z" value="1.28" />
+            <arg name="x" value="8" />
+            <arg name="y" value="4.0" />
+            <arg name="z" value="1.4" />
         </include>
         <!-- start uav1/hector_node-->
         <node pkg="aro" type="hector_node.py" name="hector_node" output="screen" args="1">
@@ -53,9 +53,9 @@
             <arg name="name" value="uav2" />
             <arg name="tf_prefix" value="uav2" />
             <arg name="model" value="$(arg model)" />
-            <arg name="x" value="4.5" />
-            <arg name="y" value="1" />
-            <arg name="z" value="1.28" />
+            <arg name="x" value="8" />
+            <arg name="y" value="6" />
+            <arg name="z" value="1.4" />
         </include>
         <!-- start uav2/hector_node-->
         <node pkg="aro" type="hector_node.py" name="uav2_hector_node" output="screen" args="2">
