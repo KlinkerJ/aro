@@ -110,7 +110,7 @@ class HectorNode(object):
         # get first point
         
         first_point = db.calculate_first_point(
-            constants['min_x'], constants['min_y'], constants['max_y'], self.margin)
+            constants['min_x'], constants['min_y'], constants['max_y'], self.margin, self.segment_size)
 
         # fly to first point
         self.flyToPosition(first_point, vmax=2)
