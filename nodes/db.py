@@ -23,8 +23,8 @@ class BaseModel(Model):
 
 class Segments(BaseModel):
     height = FloatField(null=True)
-    sm_x = IntegerField(null=True)
-    sm_y = IntegerField(null=True)
+    sm_x = FloatField(null=True)
+    sm_y = FloatField(null=True)
 
     class Meta:
         table_name = 'segments'
