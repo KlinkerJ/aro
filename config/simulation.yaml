@@ -1,27 +1,29 @@
 uav1:
   home:
-    x: 4.5
-    y: -1.0
+    x: 8
+    y: 4
 
 uav2:
   home:
-    x: 4.5
-    y: 1.0
+    x: 8
+    y: 6
 
-height: 4.2
+height: 2
 
 corners:
   p1:
-    x: 3
-    y: -3
+    x: 7
+    y: 2
   p2:
-    x: 3
-    y: 3
+    x: 7 
+    y: 8
   p3:
-    x: -3
-    y: 3
+    x: 2
+    y: 8
   p4:
-    x: -3
-    y: -3
+    x: 2
+    y: 2
 
-segment_size: 4
+segment_size: 1
+
+margin: 1

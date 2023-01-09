@@ -99,7 +99,7 @@
               </blend>
               <uri>file://virtual_maize_field_heightmap.png</uri>
               <size>10.2 10.2 0.4</size>
-              <pos>0 0 0</pos> 
+              <pos>5 5 0</pos> 
             </heightmap>
           </geometry>
         </visual>
@@ -108,7 +108,7 @@
             <heightmap>
               <uri>file://virtual_maize_field_heightmap.png</uri>
               <size>10.2 10.2 0.4</size>
-              <pos>0 0 0</pos>
+              <pos>5 5 0</pos>
             </heightmap>
           </geometry>
         </collision>
@@ -118,42 +118,42 @@
     <!-- column 1 -->
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 -3 0.0 0.0 0.0 0.0</pose>
+      <pose>2 2 0.0 0.0 0.0 0.0</pose>
       <name>maize_03_0000</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 -2 0.15 0.0 0.0 0.1</pose>
+      <pose>2 3 0.15 0.0 0.0 0.1</pose>
       <name>maize_03_0001</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 -1 0.15 0.0 0.0 0.0</pose>
+      <pose>2 4 0.15 0.0 0.0 0.0</pose>
       <name>maize_03_0002</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 0 0.1 0.0 0.0 0.1</pose>
+      <pose>2 5 0.1 0.0 0.0 0.1</pose>
       <name>maize_03_0003</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 1 0.3 0.0 0.0 0.0</pose>
+      <pose>2 6 0.3 0.0 0.0 0.0</pose>
       <name>maize_03_0004</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-3.0 2 0.1 0.0 0.0 0.1</pose>
+      <pose>2 7 0.1 0.0 0.0 0.1</pose>
       <name>maize_03_0005</name>
       <static>true</static>
     </include>
@@ -161,42 +161,42 @@
     <!-- column 2 -->
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 -3 0.05 0.0 0.0 0.1</pose>
+      <pose>3 2 0.05 0.0 0.0 0.1</pose>
       <name>maize_03_0006</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 -2 0.2 0.0 0.0 0.0</pose>
+      <pose>3 3 0.2 0.0 0.0 0.0</pose>
       <name>maize_03_0007</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 -1 0.3 0.0 0.0 0.1</pose>
+      <pose>3 4 0.3 0.0 0.0 0.1</pose>
       <name>maize_03_0008</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 0 0.4 0.0 0.0 0.0</pose>
+      <pose>3 5 0.4 0.0 0.0 0.0</pose>
       <name>maize_03_0009</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 1 0.4 0.0 0.0 0.1</pose>
+      <pose>3 6 0.4 0.0 0.0 0.1</pose>
       <name>maize_03_0010</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-1.7 2 0.2 0.0 0.0 0.0</pose>
+      <pose>3 7 0.2 0.0 0.0 0.0</pose>
       <name>maize_03_0011</name>
       <static>true</static>
     </include>
@@ -204,42 +204,42 @@
     <!-- column 3-->
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 -3 0.25 0.0 0.0 0.0</pose>
+      <pose>4 2 0.25 0.0 0.0 0.0</pose>
       <name>maize_03_0012</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 -2 0.45 0.0 0.0 0.1</pose>
+      <pose>4 3 0.45 0.0 0.0 0.1</pose>
       <name>maize_03_0013</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 -1 0.55 0.0 0.0 0.0</pose>
+      <pose>4 4 0.55 0.0 0.0 0.0</pose>
       <name>maize_03_0014</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 0 0.55 0.0 0.0 0.1</pose>
+      <pose>4 5 0.55 0.0 0.0 0.1</pose>
       <name>maize_03_0015</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 1 0.5 0.0 0.0 0.0</pose>
+      <pose>4 6 0.5 0.0 0.0 0.0</pose>
       <name>maize_03_0016</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>-0.4 2 0.35 0.0 0.0 0.1</pose>
+      <pose>4 7 0.35 0.0 0.0 0.1</pose>
       <name>maize_03_0017</name>
       <static>true</static>
     </include>
@@ -247,42 +247,42 @@
     <!-- column 4-->
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 -3 0.2 0.0 0.0 0.1</pose>
+      <pose>5 2 0.2 0.0 0.0 0.1</pose>
       <name>maize_03_0018</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 -2 0.3 0.0 0.0 0.0</pose>
+      <pose>5 3 0.3 0.0 0.0 0.0</pose>
       <name>maize_03_0019</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 -1 0.5 0.0 0.0 0.1</pose>
+      <pose>5 4 0.5 0.0 0.0 0.1</pose>
       <name>maize_03_0020</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 0 0.55 0.0 0.0 0.0</pose>
+      <pose>5 5 0.55 0.0 0.0 0.0</pose>
       <name>maize_03_0021</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 1 0.45 0.0 0.0 0.1</pose>
+      <pose>5 6 0.45 0.0 0.0 0.1</pose>
       <name>maize_03_0022</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>0.9 2 0.3 0.0 0.0 0.0</pose>
+      <pose>5 7 0.3 0.0 0.0 0.0</pose>
       <name>maize_03_0023</name>
       <static>true</static>
     </include>
@@ -290,48 +290,48 @@
     <!-- column 5-->
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 -3 0.05 0.0 0.0 0.0</pose>
+      <pose>6 2 0.05 0.0 0.0 0.0</pose>
       <name>maize_03_0024</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 -2 0.05 0.0 0.0 0.1</pose>
+      <pose>6 3 0.05 0.0 0.0 0.1</pose>
       <name>maize_03_0025</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 -1 0.0 0.0 0.0 0.0</pose>
+      <pose>6 4 0.0 0.0 0.0 0.0</pose>
       <name>maize_03_0026</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 0 0.2 0.0 0.0 0.1</pose>
+      <pose>6 5 0.2 0.0 0.0 0.1</pose>
       <name>maize_03_0027</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 1 0.1 0.0 0.0 0.0</pose>
+      <pose>6 6 0.1 0.0 0.0 0.0</pose>
       <name>maize_03_0028</name>
       <static>true</static>
     </include>
 
     <include>
       <uri>model://maize_03</uri>
-      <pose>2.2 2 0.0 0.0 0.0 0.1</pose>
+      <pose>6 7 0.0 0.0 0.0 0.1</pose>
       <name>maize_03_0029</name>
       <static>true</static>
     </include>
 
     <model name='number1'>
-      <pose>4.5 -1 0.42 0 0 0</pose>
+      <pose>8 4 0.5 0 0 0</pose>
       <static>1</static>
       <link name='link'>
         <collision name='collision'>
@@ -362,7 +362,7 @@
     </model>
 
     <model name='number2'>
-      <pose>4.5 1 0.42 0 0 0</pose>
+      <pose>8 6 0.5 0 0 0</pose>
       <static>1</static>
       <link name='link'>
         <collision name='collision'>

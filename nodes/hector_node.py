@@ -49,13 +49,16 @@ class HectorNode(object):
         
         # get nested dictornary for corners from yaml and save to global list
         corners = rospy.get_param('~corners')
-        self.corners_test = [list(corners[key].values()) for key in corners.keys()] # keys: p1-p4; values x,y
+        self.corners = [list(corners[key].values()) for key in corners.keys()] # keys: p1-p4; values x,y
 
         # get height for drone to do their job
         self.working_height = rospy.get_param('~height')
 
         # get segment_size
-        self.segment_size = rospy.get_param('~height')
+        self.segment_size = rospy.get_param('~segment_size')
+        
+        # get marfing (how much southern should the drone start to first segment)
+        self.margin = rospy.get_param('~margin')
 
 
     def release_callback(self, empty_msg):
@@ -71,18 +74,12 @@ class HectorNode(object):
         # not yet implemented. if the drone is too high, it should descend slowly until it is at the working height
         
         if self.dronetype == 1:
-            
-            #self.flypoints = [[19, 3], [19, 43], [3, 43], [3, 3]] # original for test world
-            self.flypoints = [[19, 3], [19, 12], [3, 12], [3, 3]] # faster
-
-            for point in self.flypoints:
-                #self.flyToPosition(point)
-                self.corners.append([point[0], point[1]])
 
             self.calulate_segments()
             self.start_measure()
         
         elif self.dronetype == 2:
+
             # fly to all points and fertilize
             self.fertilize()
         
@@ -93,9 +90,13 @@ class HectorNode(object):
     def calulate_segments(self):
         if not len(self.corners) == 4:
             return
-
+         
+        rospy.logwarn(str(self.corners[0]) + str(self.corners[1]))
         columns = sektoren.getSektorForEckpunkte(
-            self.corners[0], self.corners[1], self.corners[2], self.corners[3], self.segment_size)
+            self.corners[0], self.corners[1], self.corners[2], self.corners[3], self.segment_size) # muss segment size ein Int sein??
+
+        rospy.logwarn(str(columns))
+        
         db.create_segments_in_db(columns)
         rospy.loginfo("Segments created in DB.")
         return
@@ -107,9 +108,9 @@ class HectorNode(object):
         # write constants to object
         self.constants = constants
         # get first point
-        margin = 2  # 2m margin, how much southern should the drone start to first segment
+        
         first_point = db.calculate_first_point(
-            constants['min_x'], constants['min_y'], constants['max_y'], margin)
+            constants['min_x'], constants['min_y'], constants['max_y'], self.margin)
 
         # fly to first point
         self.flyToPosition(first_point, vmax=2)
@@ -121,14 +122,15 @@ class HectorNode(object):
         while not finished:
             # get next point
             next_point = db.calculate_next_point(
-                constants['min_x'], constants['max_x'], constants['min_y'], constants['max_y'], constants['segmentsize'], constants['tolerance'], margin, self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
+                constants['min_x'], constants['max_x'], 
+                constants['min_y'], constants['max_y'], 
+                constants['segmentsize'], constants['tolerance'], self.margin, 
+                self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
             rospy.logwarn("Nextpoint: " + str(next_point))
             if next_point == []:
                 finished = True
                 break
             # fly to next point
-            # simulate flight
-            rospy.loginfo("Flying to next point:" + str(next_point))
             self.flyToPosition(next_point, vmax=0.6, ramp=0.25)
 
         return
