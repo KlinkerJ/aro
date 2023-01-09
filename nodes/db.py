@@ -58,7 +58,7 @@ def get_constants():
     max_y = Segments.select().order_by(Segments.sm_y.desc()).get().sm_y
     min_x_plus_1 = Segments.select().where(
         Segments.sm_x > min_x).order_by(Segments.sm_x).get().sm_x
-    segmentsize = min_x_plus_1 - min_x
+    segmentsize = min_x_plus_1 - min_x # soll die segmentgröße wircklich so berechnet werden, wenn wir die sowieso in hector node definieren??
     tolerance = segmentsize / 2
     constants = {"min_x": min_x, "max_x": max_x, "min_y": min_y, "max_y": max_y, "segmentsize": segmentsize, "tolerance": tolerance}
     print(constants)
