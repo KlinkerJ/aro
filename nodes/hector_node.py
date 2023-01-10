@@ -294,7 +294,7 @@ class HectorNode(object):
         if self.dronetype == 1:
             if self.measurement_active:
                 self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(data.range, 2)])
-            else:
+            elif len(self.heights) > 0:
                 rospy.loginfo("Finished Measurement, trying to write in DB")
             # try:
             #     current_segment = db.get_current_segment(
