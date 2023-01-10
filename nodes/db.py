@@ -88,7 +88,11 @@ def save_heights_after_measurement(heights, segmentsize):
     heights_this_segment = []
     last_segment = None
     for measurement in heights:
-        current_segment = get_current_segment(measurement[0], measurement[1], segmentsize / 2)
+        try:
+            current_segment = get_current_segment(measurement[0], measurement[1], segmentsize / 2)
+        except:
+            # no current segment
+            continue
         if current_segment == last_segment or len(heights_this_segment) == 0:
             # append heights to current array
             print("Appending Height" + str(measurement[2]) + "for Segment:" + str(current_segment.id))
