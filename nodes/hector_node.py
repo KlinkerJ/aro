@@ -298,7 +298,7 @@ class HectorNode(object):
         # print("Sonar Height:", round(data.range, 2))
         if self.dronetype == 1:
             if self.measurement_active:
-                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(data.range, 2)])
+                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.x - data.range, 2)])
             # try:
             #     current_segment = db.get_current_segment(
             #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
