@@ -22,6 +22,7 @@ class HectorNode(object):
         self.battery_time = time.time()
         self.measurement_active = False
         self.battery = 100
+        self.fertilize_gram = 1000
         self.current_segment = 0
         self.heights = []
         self.cmd_vel = Twist()
@@ -183,6 +184,9 @@ class HectorNode(object):
         # write constants to object
         self.constants = constants
         fertilize_margin = 0.5
+        height_goal = 2
+        p_factor = 5
+        fertilize_factor = 50 # 30g per Second
 
         #self.flyToPosition([None, None, self.working_height])
 
@@ -190,9 +194,6 @@ class HectorNode(object):
         v1, v2, v3 = db.generate_path(self.home_pos)
         v1[0].append(self.home_pos[2] + fertilize_margin)
         v1[-1].append(self.home_pos[2] + fertilize_margin)
-        rospy.loginfo(str(v1))
-        rospy.loginfo(str(v2))
-        rospy.loginfo(str(v3))
         for point in v1:
             #rospy.loginfo("Using V1 for Path Generation: " + str(point))
             # using v1 path generation
@@ -210,6 +211,25 @@ class HectorNode(object):
                     z = segment_height + fertilize_margin
                     self.flyToPosition([x, y, z], vmax=0.6, ramp=0.25) # fly to segment height
                     self.flyToPosition([point[0], point[1], z], vmax=0.6, ramp=0.25) # fly to segment
+                
+                p = abs(segment_height - height_goal) * p_factor
+                new_fertilize_gram = self.fertilize_gram - (p * fertilize_factor)
+                if new_fertilize_gram < 0:
+                    # if less then 200g left after fertilizing this segment, recharge first
+                    last_position = [self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.odometry.pose.pose.position.z]
+                    self.flyToPosition([last_position[0], last_position[1], self.working_height], vmax=0.6, ramp=0.25)
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], vmax=0.6, ramp=0.25)
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.home_pos[2]], vmax=0.6, ramp=0.25)
+                    rospy.loginfo("Recharching Fertilize Container!")
+                    rospy.sleep(10)
+                    self.fertilize_gram = 1000
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], vmax=0.6, ramp=0.25)
+                    self.flyToPosition([last_position[0], last_position[1], self.working_height], vmax=0.6, ramp=0.25)
+                    self.flyToPosition(last_position, vmax=0.6, ramp=0.25)
+                    
+                rospy.loginfo("Fertilizing with " + str(p * fertilize_factor) + "g. Remaining: " + str(self.fertilize_gram))
+                rospy.sleep(p)
+                self.fertilize_gram = self.fertilize_gram - (p * fertilize_factor)
             except Exception as e:
                 print(e)
                 self.flyToPosition(point, vmax=0.6, ramp=0.25)
