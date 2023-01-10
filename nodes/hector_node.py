@@ -156,6 +156,10 @@ class HectorNode(object):
         finished = False
         while not finished:
             # get next point
+            if len(self.heights) > 0:
+                # save heights in DB
+                rospy.loginfo("Saving Heights in DB:" + str(self.heights))
+                db.save_heights_after_measurement(self.heights, self.segment_size)
             next_point = db.calculate_next_point(
                 constants['min_x'], constants['max_x'], 
                 constants['min_y'], constants['max_y'], 
@@ -294,8 +298,6 @@ class HectorNode(object):
         if self.dronetype == 1:
             if self.measurement_active:
                 self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(data.range, 2)])
-            elif len(self.heights) > 0:
-                rospy.loginfo("Finished Measurement, trying to write in DB")
             # try:
             #     current_segment = db.get_current_segment(
             #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
