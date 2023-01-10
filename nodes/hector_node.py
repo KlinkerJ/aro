@@ -40,14 +40,14 @@ class HectorNode(object):
         # release drone with empty pub on '/release' - topic
         rospy.Subscriber("/release", Empty, self.release_callback)
 
-        #rospy.Subscriber("/scan", LaserScan, self.scan_callback) sim schmiert ab wenn callback drin ist, auch wenn sensor auf minimalen einstellungen ist
+        rospy.Subscriber("/scan", LaserScan, self.scan_callback) # sim schmiert ab wenn callback drin ist, auch wenn sensor auf minimalen einstellungen ist
         
         # pub drone control velocity
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1) 
         
         # get drone home position and save to list
         home_pos = rospy.get_param(f'~uav{dronetype}')
-        self.home_pos = list(home_pos['home'].values()) # x,y
+        self.home_pos = list(home_pos['home'].values()) # x,y,z
         rospy.logwarn(f'uav{dronetype} home: {self.home_pos}')
         
         # get nested dictornary for corners from yaml and save to global list
@@ -182,18 +182,37 @@ class HectorNode(object):
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
+        fertilize_margin = 0.5
 
-        self.flyToPosition([None, None, self.working_height])
+        #self.flyToPosition([None, None, self.working_height])
 
         # test path generation
-        v1, v2, v3 = db.generate_path()
+        v1, v2, v3 = db.generate_path(self.home_pos)
+        v1[0].append(self.home_pos[2] + fertilize_margin)
+        v1[-1].append(self.home_pos[2] + fertilize_margin)
         rospy.loginfo(str(v1))
         rospy.loginfo(str(v2))
         rospy.loginfo(str(v3))
         for point in v1:
-            rospy.loginfo("Using V1 for Path Generation: " + str(point))
+            #rospy.loginfo("Using V1 for Path Generation: " + str(point))
             # using v1 path generation
-            self.flyToPosition(point, vmax=0.6, ramp=0.25)
+            try:
+                segment_height = db.get_current_segment(point[0], point[1], self.segment_size / 2).height
+                if (self.odometry.pose.pose.position.z > segment_height + fertilize_margin):
+                    # current position is higher then next segment
+                    z = self.odometry.pose.pose.position.z
+                    self.flyToPosition([point[0], point[1], z], vmax=0.6, ramp=0.25) # fly to segment
+                    self.flyToPosition([point[0], point[1], segment_height + fertilize_margin], vmax=0.6, ramp=0.25) # fly to segment height
+                else:
+                    # current position is lower then next segment
+                    x = self.odometry.pose.pose.position.x
+                    y = self.odometry.pose.pose.position.y
+                    z = segment_height + fertilize_margin
+                    self.flyToPosition([x, y, z], vmax=0.6, ramp=0.25) # fly to segment height
+                    self.flyToPosition([point[0], point[1], z], vmax=0.6, ramp=0.25) # fly to segment
+            except Exception as e:
+                print(e)
+                self.flyToPosition(point, vmax=0.6, ramp=0.25)
         return
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp = 0.4):
@@ -298,7 +317,7 @@ class HectorNode(object):
         # print("Sonar Height:", round(data.range, 2))
         if self.dronetype == 1:
             if self.measurement_active:
-                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.x - data.range, 2)])
+                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.z - data.range, 2)])
             # try:
             #     current_segment = db.get_current_segment(
             #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB

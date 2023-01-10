@@ -2,11 +2,13 @@ uav1:
   home:
     x: 8
     y: 4
+    z: 1.4
 
 uav2:
   home:
     x: 8
     y: 6
+    z: 1.4
 
 height: 3
 

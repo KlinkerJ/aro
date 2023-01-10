@@ -3,6 +3,7 @@ import numpy as np
 import time
 from math import sqrt
 from python_tsp.exact import solve_tsp_dynamic_programming
+from python_tsp.heuristics import solve_tsp_simulated_annealing
 from python_tsp.distances import great_circle_distance_matrix
 from python_tsp.distances import euclidean_distance_matrix
 
@@ -192,14 +193,14 @@ def get_segments_for_path(path, xy_list):
     print(segments)
     return segments
 
-def generate_path():
+def generate_path(homeposition, min_height = 0, max_height = 500):
     # function to generate shortest path between points which should be fertilized
     # classic traveling salesman problem
     # solved via Bellman–Held–Karp algorithm
     # this allows us to only fly to points which should be fertilized and not fly over the complete field
-    current_position = [0, 0] # retrieve via drone pose
-    points = [current_position]
-    segments = Segments.select(Segments.sm_x, Segments.sm_y) # should be passed to this function
+    startpoint = [homeposition[0], homeposition[1]]
+    points = [startpoint]
+    segments = Segments.select(Segments.sm_x, Segments.sm_y).where(Segments.height > min_height, Segments.height < max_height) # should be passed to this function
     for segment in segments:
         points.append([segment.sm_x, segment.sm_y])
     # generate distance matrix
@@ -209,13 +210,14 @@ def generate_path():
     dist = lambda p1, p2: sqrt(((p1-p2)**2).sum())
     dm = np.asarray([[dist(p1, p2) for p2 in xy_list] for p1 in xy_list])
     distance_matrix = great_circle_distance_matrix(xy_list)
-    permutation, distance = solve_tsp_dynamic_programming(dm)
+    permutation, distance = solve_tsp_simulated_annealing(dm)
     v1 = get_segments_for_path(permutation, points)
     # Variante 2
-    permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+    permutation, distance = solve_tsp_simulated_annealing(distance_matrix)
     v2 = get_segments_for_path(permutation, points)
     # Variante 3
     distance_matrix = euclidean_distance_matrix(xy_list)
-    permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
+    permutation, distance = solve_tsp_simulated_annealing(distance_matrix)
     v3 = get_segments_for_path(permutation, points)
+
     return v1, v2, v3
