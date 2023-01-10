@@ -84,6 +84,22 @@ def save_heights_for_segment(segment, heights):
     segment.save()
     return segment
 
+def save_heights_after_measurement(heights, segmentsize):
+    heights_this_segment = []
+    last_segment = None
+    for measurement in heights:
+        current_segment = get_current_segment(measurement[0], measurement[1], segmentsize / 2)
+        if current_segment == last_segment or len(heights_this_segment) == 0:
+            # append heights to current array
+            print("Appending Height" + str(measurement[2]) + "for Segment:" + str(current_segment.id))
+            heights_this_segment.append(measurement[2])
+            last_segment = current_segment
+        else:
+            # save heights for last segment
+            print("Saving Heights")
+            save_heights_for_segment(last_segment, heights_this_segment)
+            heights_this_segment = [measurement[2]]
+            last_segment = current_segment
 
 def calculate_first_point(min_x, min_y, max_y, margin, segment_size):
     # start on segment with minimal x and minimal y
