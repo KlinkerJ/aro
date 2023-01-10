@@ -122,10 +122,10 @@ class HectorNode(object):
         rospy.loginfo('Determining working height.')
 
         self.flyToPosition([None, None, self.working_height])
-        f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model)
+        f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model) get via corners
         f_m_y = (self.corners[1][1] - self.corners[0][1]) / 2 + 2
 
-        rospy.logwarn('field mid point:' + str(f_m_x) + str(f_m_y))
+        rospy.logwarn('field mid point: ' + str(f_m_x) + str(f_m_y))
         self.flyToPosition([f_m_x, f_m_y])
 
         while self.range >= 1: # min height above plants in middle of field
@@ -161,7 +161,7 @@ class HectorNode(object):
                 constants['min_y'], constants['max_y'], 
                 constants['segmentsize'], constants['tolerance'], self.margin, 
                 self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
-            rospy.logwarn("Nextpoint: " + str(next_point))
+            #rospy.logwarn("Nextpoint: " + str(next_point))
             if next_point == []:
                 finished = True
                 break
@@ -288,15 +288,18 @@ class HectorNode(object):
 
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
-        # print("Sonar Height:", round(data.range, 2))
         if self.measurement_active and self.dronetype == 1:
             try:
                 current_segment = db.get_current_segment(
                     self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
+                rospy.loginfo("Current Segment:" + str(current_segment.id))
             except:
                 #print("No current Segment")
+                rospy.loginfo("No current Segment")
                 if len(self.heights) > 0:
                     last_segment = db.get_segment_for_id(self.current_segment)
+                    rospy.loginfo("Saving heights for last segment")
+                    rospy.loginfo(str(self.heights))
                     db.save_heights_for_segment(last_segment, self.heights)
                     self.current_segment = 0
                     self.heights = []
@@ -312,12 +315,15 @@ class HectorNode(object):
                 else:
                     # save heights for last segment
                     last_segment = db.get_segment_for_id(self.current_segment)
+                    rospy.loginfo("Saving heights for last segment")
+                    rospy.loginfo(str(self.heights))
                     db.save_heights_for_segment(last_segment, self.heights)
                     # set new segment
                     self.current_segment = current_segment.id
                     self.heights = []
                     self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-
+        
+        # sonar measurements for determining the working height
         elif not self.measurement_active and self.dronetype == 1 and self.working_height_set == False:
             self.range = round(data.range, 2)
 
