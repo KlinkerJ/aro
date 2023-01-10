@@ -103,9 +103,9 @@ def save_heights_after_measurement(heights, segmentsize):
 
 def calculate_first_point(min_x, min_y, max_y, margin, segment_size):
     # start on segment with minimal x and minimal y
-    min_x =  min_x + (segment_size / 2)
-    print("First Point:", min_x, min_y - (margin + 1))
-    return [min_x, min_y - (margin + 1)]
+    #min_x =  min_x + (segment_size / 2)
+    print("First Point:", min_x, min_y - (segment_size / 2 + margin))
+    return [min_x, min_y - (segment_size / 2 + margin)]
 
 
 def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, margin, current_x, current_y, debug=False):
@@ -128,7 +128,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
             segment_same_column_north = Segments.select().where(
                 (Segments.sm_x.between(current_x - tolerance, current_x + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y.desc()).get()
             nextpoint = [segment_same_column_north.sm_x,
-                         segment_same_column_north.sm_y + margin + 2]
+                         segment_same_column_north.sm_y + segmentsize / 2 + margin]
             print("Nextpoint:", nextpoint)
             return nextpoint
         except Exception as e:
@@ -138,7 +138,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                 segment_next_column_south = Segments.select().where(
                     (Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y).get()
                 nextpoint = [segment_next_column_south.sm_x,
-                             segment_next_column_south.sm_y - (margin + 2)]
+                             segment_next_column_south.sm_y - (segmentsize / 2 + margin)]
                 print("Nextpoint:", nextpoint)
                 return nextpoint
             except:
@@ -155,7 +155,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
             segment_same_column_south = Segments.select().where(
                 (Segments.sm_x.between(current_x - tolerance, current_x + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y).get()
             nextpoint = [segment_same_column_south.sm_x,
-                         segment_same_column_south.sm_y - (margin + 2)]
+                         segment_same_column_south.sm_y - (segmentsize / 2 + margin)]
             print("Nextpoint 1:", nextpoint)
             return nextpoint
         except:
@@ -165,7 +165,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                 segment_next_column_north = Segments.select().where(
                     (Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y.desc()).get()
                 nextpoint = [segment_next_column_north.sm_x,
-                             segment_next_column_north.sm_y + margin + 2]
+                             segment_next_column_north.sm_y + segmentsize / 2 + margin]
                 print("Nextpoint 2:", nextpoint)
                 return nextpoint
             except:

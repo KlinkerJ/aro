@@ -8,7 +8,7 @@ uav2:
     x: 8
     y: 6
 
-height: 2
+height: 3
 
 corners:
   p1:

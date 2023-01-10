@@ -5,7 +5,7 @@ import rospy
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Bool, Empty
-from sensor_msgs.msg import Range
+from sensor_msgs.msg import Range, LaserScan
 import numpy as np
 import math
 import db
@@ -25,6 +25,7 @@ class HectorNode(object):
         self.current_segment = 0
         self.heights = []
         self.cmd_vel = Twist()
+        self.range = 0 
         self.fertilization_speed = 0
 
 
@@ -38,6 +39,8 @@ class HectorNode(object):
 
         # release drone with empty pub on '/release' - topic
         rospy.Subscriber("/release", Empty, self.release_callback)
+
+        #rospy.Subscriber("/scan", LaserScan, self.scan_callback) sim schmiert ab wenn callback drin ist, auch wenn sensor auf minimalen einstellungen ist
         
         # pub drone control velocity
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1) 
@@ -52,11 +55,12 @@ class HectorNode(object):
         self.corners = [list(corners[key].values()) for key in corners.keys()] # keys: p1-p4; values x,y
 
         # get height for drone to do their job
-        self.working_height = rospy.get_param('~height')
+        self.working_height = rospy.get_param('~height') # pre-working_height
+        self.working_height_set = False
 
         # get segment_size
         self.segment_size = rospy.get_param('~segment_size')
-        self.segment_size = 2
+        #self.segment_size = 2
         
         # get marfing (how much southern should the drone start to first segment)
         self.margin = rospy.get_param('~margin')
@@ -68,7 +72,7 @@ class HectorNode(object):
         rospy.logwarn("release of drone: " + str(self.dronetype))
         
         # start drone and fly at working height
-        self.flyToPosition([None, None, self.working_height])
+        #self.flyToPosition([None, None, self.working_height])
 
         # probably not the best technique: we should self-detect the height bei slowly approaching the ground and detecting the height with sonar
         # working height: height at which the sonar detects plants with a margin
@@ -76,7 +80,9 @@ class HectorNode(object):
         
         if self.dronetype == 1:
 
-            self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
+            self.determine_working_height()
+
+            #self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
 
             self.calulate_segments()
             self.start_measure()
@@ -105,6 +111,32 @@ class HectorNode(object):
         return
 
 
+    def scan_callback(self, scan): # überlastet die sim!!
+        if self.working_height_set == False:
+            ranges = scan.ranges
+            print(len(ranges), min(ranges), max((ranges)))
+            #self.scan_range_min = scan.range_min
+
+
+    def determine_working_height(self):
+        rospy.loginfo('Determining working height.')
+
+        self.flyToPosition([None, None, self.working_height])
+        f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model) get via corners
+        f_m_y = (self.corners[1][1] - self.corners[0][1]) / 2 + 2
+
+        rospy.logwarn('field mid point: ' + str(f_m_x) + str(f_m_y))
+        self.flyToPosition([f_m_x, f_m_y])
+
+        while self.range >= 1: # min height above plants in middle of field
+            self.flyToPosition([None, None, self.odometry.pose.pose.position.z - 0.5])
+
+        self.working_height_set = True
+        self.working_height = self.odometry.pose.pose.position.z # pub for second drone ??
+        return
+
+
+
     def start_measure(self): 
         rospy.loginfo("Starting the measurement.")
         constants = db.get_constants()
@@ -129,7 +161,7 @@ class HectorNode(object):
                 constants['min_y'], constants['max_y'], 
                 constants['segmentsize'], constants['tolerance'], self.margin, 
                 self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
-            rospy.logwarn("Nextpoint: " + str(next_point))
+            #rospy.logwarn("Nextpoint: " + str(next_point))
             if next_point == []:
                 finished = True
                 break
@@ -145,6 +177,8 @@ class HectorNode(object):
         constants = db.get_constants()
         # write constants to object
         self.constants = constants
+
+        self.flyToPosition([None, None, self.working_height])
 
         # test path generation
         v1, v2, v3 = db.generate_path()
