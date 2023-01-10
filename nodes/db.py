@@ -92,6 +92,10 @@ def save_heights_after_measurement(heights, segmentsize):
             current_segment = get_current_segment(measurement[0], measurement[1], segmentsize / 2)
         except:
             # no current segment
+            if (len(heights_this_segment) > 0):
+                save_heights_for_segment(last_segment, heights_this_segment)
+                heights_this_segment = []
+                last_segment = None
             continue
         if current_segment == last_segment or len(heights_this_segment) == 0:
             # append heights to current array
@@ -132,7 +136,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                 (Segments.sm_x.between(current_x - tolerance, current_x + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y.desc()).get()
             nextpoint = [segment_same_column_north.sm_x,
                          segment_same_column_north.sm_y + segmentsize / 2 + margin]
-            print("Nextpoint:", nextpoint)
+            print("Nextpoint 3:", nextpoint)
             return nextpoint
         except Exception as e:
             # all segments in this column are measured
@@ -142,7 +146,7 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
                     (Segments.sm_x.between(current_x + segmentsize - tolerance, current_x + segmentsize + tolerance)) & (Segments.height.is_null())).order_by(Segments.sm_y).get()
                 nextpoint = [segment_next_column_south.sm_x,
                              segment_next_column_south.sm_y - (segmentsize / 2 + margin)]
-                print("Nextpoint:", nextpoint)
+                print("Nextpoint 4:", nextpoint)
                 return nextpoint
             except:
                 # No field left to measure
