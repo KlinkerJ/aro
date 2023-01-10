@@ -135,6 +135,8 @@ class HectorNode(object):
                 break
             # fly to next point
             self.flyToPosition(next_point, vmax=0.6, ramp=0.25)
+        
+        self.measurement_active = False
 
         return
 
@@ -255,34 +257,38 @@ class HectorNode(object):
     # calling for and saving altitude values associated with the current segment
     def sonar_callback(self, data):
         # print("Sonar Height:", round(data.range, 2))
-        if self.measurement_active and self.dronetype == 1:
-            try:
-                current_segment = db.get_current_segment(
-                    self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
-            except:
-                #print("No current Segment")
-                if len(self.heights) > 0:
-                    last_segment = db.get_segment_for_id(self.current_segment)
-                    db.save_heights_for_segment(last_segment, self.heights)
-                    self.current_segment = 0
-                    self.heights = []
+        if self.dronetype == 1:
+            if self.measurement_active:
+                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(data.range, 2)])
             else:
-                if self.current_segment == 0:
-                    # set new segment
-                    self.current_segment = current_segment.id
-                    self.heights = []
-                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-                elif self.current_segment == current_segment.id:
-                    # append height
-                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-                else:
-                    # save heights for last segment
-                    last_segment = db.get_segment_for_id(self.current_segment)
-                    db.save_heights_for_segment(last_segment, self.heights)
-                    # set new segment
-                    self.current_segment = current_segment.id
-                    self.heights = []
-                    self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
+                rospy.loginfo("Finished Measurement, trying to write in DB")
+            # try:
+            #     current_segment = db.get_current_segment(
+            #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
+            # except:
+            #     #print("No current Segment")
+            #     if len(self.heights) > 0:
+            #         last_segment = db.get_segment_for_id(self.current_segment)
+            #         db.save_heights_for_segment(last_segment, self.heights)
+            #         self.current_segment = 0
+            #         self.heights = []
+            # else:
+            #     if self.current_segment == 0:
+            #         # set new segment
+            #         self.current_segment = current_segment.id
+            #         self.heights = []
+            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
+            #     elif self.current_segment == current_segment.id:
+            #         # append height
+            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
+            #     else:
+            #         # save heights for last segment
+            #         last_segment = db.get_segment_for_id(self.current_segment)
+            #         db.save_heights_for_segment(last_segment, self.heights)
+            #         # set new segment
+            #         self.current_segment = current_segment.id
+            #         self.heights = []
+            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
 
     def pose_callback(self, data):
         # battery calculation via time (0.001% per second)
