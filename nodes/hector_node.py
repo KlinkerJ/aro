@@ -160,6 +160,7 @@ class HectorNode(object):
                 # save heights in DB
                 rospy.loginfo("Saving Heights in DB:" + str(self.heights))
                 db.save_heights_after_measurement(self.heights, self.segment_size)
+                rospy.sleep(1) # let the database write its data to file
             next_point = db.calculate_next_point(
                 constants['min_x'], constants['max_x'], 
                 constants['min_y'], constants['max_y'], 
