@@ -2,32 +2,14 @@
 
 <launch>
 
-    
     <!-- <arg name="model" default="$(find hector_quadrotor_description)/urdf/quadrotor.gazebo.xacro" /> -->
     <arg name="uav1_model" default="$(find hector_quadrotor_description)/urdf/quadrotor.gazebo.xacro" />
     <arg name="uav2_model" default="$(find hector_quadrotor_description)/urdf/quadrotor_without_sonar.gazebo.xacro" />
-    <arg name="world" default="my_generated" doc="launch specific or generated world"/>
 
-    <!-- start generated world -->
-    <group if="$(eval arg('world') == 'generated')">
-        <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-            <arg name="world" value="$(find virtual_maize_field)/worlds/generated.world"/>
-        </include>
-    </group>
-
-    <!-- start changed generated world -->
-    <group if="$(eval arg('world') == 'my_generated')">
-        <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-            <arg name="world" value="$(find aro)/worlds/generated_moved.world"/>
-        </include>
-    </group>
-
-    <!-- start test world -->
-    <group if="$(eval arg('world') == 'test')">
-        <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-            <arg name="world" value="$(find aro)/worlds/aro_field_world_v2.world"/>
-        </include>
-    </group>
+    <!-- start gazebo world -->
+    <include file="$(find hector_gazebo_worlds)/launch/start.launch">
+        <arg name="world" value="$(find virtual_maize_field)/worlds/$(arg world).world"/>
+    </include>
 
     <group ns="uav1">
         <!-- spawn uav1 -->
@@ -37,7 +19,7 @@
             <arg name="model" value="$(arg uav1_model)" />
             <arg name="x" value="8" />
             <arg name="y" value="4.0" />
-            <arg name="z" value="1.4" />
+            <arg name="z" value="1.1" />
         </include>
         <!-- start uav1/hector_node-->
         <node pkg="aro" type="hector_node.py" name="hector_node" output="screen" args="1">
@@ -57,7 +39,7 @@
             <arg name="model" value="$(arg uav2_model)" />
             <arg name="x" value="8" />
             <arg name="y" value="6" />
-            <arg name="z" value="1.4" />
+            <arg name="z" value="1.1" />
         </include>
         <!-- start uav2/hector_node-->
         <node pkg="aro" type="hector_node.py" name="uav2_hector_node" output="screen" args="2">

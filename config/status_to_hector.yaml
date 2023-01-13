@@ -10,12 +10,6 @@ axis:
 button:
   b1: button_dpad_up
   b2: button_dpad_down
-  #b3: button_dpad_left
-  #b4: button_dpad_right
-  #b5: button_cross
-  #b6: button_circle
-  #b7: button_square
-  #b8: button_triangle
   b9: button_trackpad
   b10: button_share
   b11: button_options
