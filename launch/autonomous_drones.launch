@@ -2,13 +2,12 @@
 
 <launch>
 
-    <!-- <arg name="model" default="$(find hector_quadrotor_description)/urdf/quadrotor.gazebo.xacro" /> -->
-    <arg name="uav1_model" default="$(find hector_quadrotor_description)/urdf/quadrotor.gazebo.xacro" />
-    <arg name="uav2_model" default="$(find hector_quadrotor_description)/urdf/quadrotor_without_sonar.gazebo.xacro" />
+    <arg name="uav1_model" default="$(find aro)/world/quadrotor_urdf/quadrotor.gazebo.xacro" />
+    <arg name="uav2_model" default="$(find aro)/world/quadrotor_urdf/quadrotor.gazebo.xacro" />
 
     <!-- start gazebo world -->
     <include file="$(find hector_gazebo_worlds)/launch/start.launch">
-        <arg name="world" value="$(find virtual_maize_field)/worlds/$(arg world).world"/>
+        <arg name="world" value="$(find aro)/world/generated.world"/>
     </include>
 
     <group ns="uav1">
