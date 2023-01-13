@@ -16,8 +16,6 @@ class HectorNode(object):
     def __init__(self, dronetype):
 
         self.dronetype = dronetype # 1 = measurement, 2 = fertilization
-        self.sonar_offset = 0.17  # m not used
-        self.drone_z_offset = 0.28  # m not used
         self.corners = []  # array of corners, empty at start <-- kann aber auch gut über yaml übergeben werden siehe weiter unten
         self.battery_time = time.time()
         self.measurement_active = False
@@ -61,10 +59,11 @@ class HectorNode(object):
 
         # get segment_size
         self.segment_size = rospy.get_param('~segment_size')
-        #self.segment_size = 2
         
         # get marfing (how much southern should the drone start to first segment)
         self.margin = rospy.get_param('~margin')
+
+        self.sonar_offset = rospy.get_param('~sonar_offset')  # m
 
 
     def release_callback(self, empty_msg):
@@ -337,7 +336,7 @@ class HectorNode(object):
         # print("Sonar Height:", round(data.range, 2))
         if self.dronetype == 1:
             if self.measurement_active:
-                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.z - data.range, 2)])
+                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.z - data.range - self.sonar_offset, 2)])
             # try:
             #     current_segment = db.get_current_segment(
             #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
