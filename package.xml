@@ -1,32 +1,34 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>aro</name>
-  <version>0.0.0</version>
-  <description>The aro package</description>
+  <version>1.0.0</version>
+  <description>Package for two autonomous fertilizing drones, initiated by our autonomous robotics course with Prof. Dr. Tobias Seidl</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
   <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="lennart@todo.todo">lennart</maintainer>
+  <maintainer email="jonas.klinker@studmail.w-hs.de">Jonas Klinker</maintainer>
+  <maintainer email="lennart.fuhrig@studmail.w-hs.de">Lennart Fuhrig</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>Apache 2.0</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
   <!-- Optional attribute type can be: website, bugtracker, or repository -->
   <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/aro</url> -->
+  <!-- <url type="website">http://wiki.ros.org/</url> -->
 
 
   <!-- Author tags are optional, multiple are allowed, one per tag -->
   <!-- Authors do not have to be maintainers, but could be -->
   <!-- Example: -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
-
+  <author email="jonas.klinker@studmail.w-hs.de">Jonas Klinker</author>
+  <author email="lennart.fuhrig@studmail.w-hs.de">Lennart Fuhrig</author>
+  <author email="marcel.heinen@studmail.w-hs.de">Marcel Heinen</author>
 
   <!-- The *depend tags are used to specify dependencies -->
   <!-- Dependencies can be catkin packages or system dependencies -->
