@@ -136,6 +136,21 @@ def get_segment_for_id(id):
 
 
 def save_heights_for_segment(segment, heights):
+    """
+    Function to save the heights for a given segment
+
+    Parameters
+    ----------
+    segment: Segments
+        segment for which the heights should be saved
+    heights: list
+        list of heights to be saved for the given segment, like [1.2, 1.3, 1.4]
+    
+    Returns
+    -------
+    segment: Segments
+        segment with the saved heights
+    """
     mean = sum(heights) / len(heights)
     segment.height = round(mean, 2)
     segment.save()
