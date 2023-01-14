@@ -157,6 +157,20 @@ def save_heights_for_segment(segment, heights):
     return segment
 
 def save_heights_after_measurement(heights, segmentsize):
+    """
+    Function to save the heights for multiple segments after a measurement
+
+    Parameters
+    ----------
+    heights: list
+        list of heights to be saved, like [[x1, y1, 1.2], [x2, y2, 1.3], [x3, y3, 1.4]]
+    segmentsize: float
+        size of the segments
+    
+    Returns
+    -------
+    None
+    """
     heights_this_segment = []
     last_segment = None
     for measurement in heights:
@@ -181,6 +195,22 @@ def save_heights_after_measurement(heights, segmentsize):
             last_segment = current_segment
 
 def calculate_first_point(min_x, min_y, max_y, margin, segment_size):
+    """
+    Function to calculate the first point for the measurement
+    
+    Parameters
+    ----------
+    min_x: float
+        minimal x coordinate of the segments center
+    min_y: float
+        minimal y coordinate of the segments center
+    max_y: float
+        maximal y coordinate of the segments center
+    margin: float
+        margin to the border of the map (northern or southern), in meters
+    segment_size: float
+        size of the segments
+        """
     # start on segment with minimal x and minimal y
     #min_x =  min_x + (segment_size / 2)
     print("First Point:", min_x, min_y - (segment_size / 2 + margin))
@@ -188,6 +218,36 @@ def calculate_first_point(min_x, min_y, max_y, margin, segment_size):
 
 
 def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, margin, current_x, current_y, debug=False):
+    """
+    Function to calculate the next point for the measurement
+    
+    Parameters
+    ----------
+    min_x: float
+        minimal x coordinate of the segments center
+    max_x: float
+        maximal x coordinate of the segments center
+    min_y: float
+        minimal y coordinate of the segments center
+    max_y: float
+        maximal y coordinate of the segments center
+    segmentsize: float
+        size of the segments
+    tolerance: float
+        tolerance to find the current segment, normally half of the segmentsize
+    margin: float
+        margin to the border of the map (northern or southern), in meters
+    current_x: float
+        x coordinate of the current position
+    current_y: float
+        y coordinate of the current position
+    debug: bool
+        if True, debug information will be printed
+    Returns
+    -------
+    next_point: list
+        list with the next point, like [x, y]
+    """
     if debug:
         print("Current Point:", current_x, current_y)
         print("Min X:", min_x)
@@ -258,6 +318,19 @@ def calculate_next_point(min_x, max_x, min_y, max_y, segmentsize, tolerance, mar
         return []
 
 def get_segments_for_path(path, xy_list):
+    """
+    Function to get the segments for a given path
+    Parameters
+    ----------
+    path: list
+        list with the indices of the segments like [1, 2, 3, 4]
+    xy_list: list
+        list with the coordinates of the segments like [[1, 2], [3, 4], [5, 6], [7, 8]]
+    Returns
+    -------
+    segments: list
+        list with the coordinates of the segments for the given path
+    """
     segments = []
     for i in path:
         segments.append(xy_list[i])
@@ -265,10 +338,29 @@ def get_segments_for_path(path, xy_list):
     return segments
 
 def generate_path(homeposition, min_height = 0, max_height = 500):
-    # function to generate shortest path between points which should be fertilized
-    # classic traveling salesman problem
-    # solved via Bellman–Held–Karp algorithm
-    # this allows us to only fly to points which should be fertilized and not fly over the complete field
+    """
+    Function to generate the shortest path between the points which should be fertilized
+    Classic traveling salesman problem
+    Originally solved via Bellman–Held–Karp algorithm, but this is too slow for our use case
+    Therefore we use the Simulated Annealing algorithm
+    This allows us to fly only to segments which need fertilization, not to all segments
+
+    Parameters
+    ----------
+    homeposition: list
+        list with the homeposition like [x, y]
+    min_height: int
+        minimal height of the segments which should be fertilized
+    max_height: int
+        maximal height of the segments which should be fertilized
+    
+    Returns
+    -------
+    path: list
+        list with the indices of the segments like [[1, 2], [3, 4], [5, 6], [7, 8]]
+
+    """
+
     startpoint = [homeposition[0], homeposition[1]]
     points = [startpoint]
     segments = Segments.select(Segments.sm_x, Segments.sm_y).where(Segments.height > min_height, Segments.height < max_height) # should be passed to this function
@@ -276,17 +368,17 @@ def generate_path(homeposition, min_height = 0, max_height = 500):
         points.append([segment.sm_x, segment.sm_y])
     # generate distance matrix
     xy_list = np.asarray(points)
-    # Alle Varianten sind ungefähr gleich schnell.. Testen, welche uns bei der Drohne am besten gefällt
-    # Variante 1
+    # All variants are nearly the same speed, select the one we like the most
+    # V1
     dist = lambda p1, p2: sqrt(((p1-p2)**2).sum())
     dm = np.asarray([[dist(p1, p2) for p2 in xy_list] for p1 in xy_list])
     distance_matrix = great_circle_distance_matrix(xy_list)
     permutation, distance = solve_tsp_simulated_annealing(dm)
     v1 = get_segments_for_path(permutation, points)
-    # Variante 2
+    # V2
     permutation, distance = solve_tsp_simulated_annealing(distance_matrix)
     v2 = get_segments_for_path(permutation, points)
-    # Variante 3
+    # V3
     distance_matrix = euclidean_distance_matrix(xy_list)
     permutation, distance = solve_tsp_simulated_annealing(distance_matrix)
     v3 = get_segments_for_path(permutation, points)
