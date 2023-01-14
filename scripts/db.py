@@ -23,6 +23,12 @@ class BaseModel(Model):
 
 
 class Segments(BaseModel):
+    """
+    ORM Database Class to present our Segments 
+
+    Each Segment is defined with an unique ID, x and y coordinates of its center and - after inital measurement - a height value
+    """
+
     height = FloatField(null=True)
     sm_x = FloatField(null=True)
     sm_y = FloatField(null=True)
@@ -41,6 +47,16 @@ class SqliteSequence(BaseModel):
 
 
 def create_segments_in_db(spalten):
+    """
+    Function to create multiple segments in the database
+
+    Parameters
+    ----------
+    spalten: list
+        List of lists of segments to be created in the database
+        like: [[(x1,y1), (x2,y2), (x3,y3)], [(x1,y1), (x2,y2), (x3,y3)]]
+    """
+
     # First delete all rows in current DB
     q = Segments.delete()
     q.execute()
@@ -53,6 +69,15 @@ def create_segments_in_db(spalten):
 
 
 def get_constants():
+    """
+    Function to generate constants depending on already existing segments in the database
+
+    Returns
+    -------
+    constants: dict
+        Dictionary of constants like min_x, max_x, min_y, max_y, segmentsize and tolerance
+    """
+
     min_x = Segments.select().order_by(Segments.sm_x).get().sm_x
     max_x = Segments.select().order_by(Segments.sm_x.desc()).get().sm_x
     min_y = Segments.select().order_by(Segments.sm_y).get().sm_y
@@ -67,6 +92,24 @@ def get_constants():
 
 
 def get_current_segment(current_x, current_y, tolerance):
+    """
+    Function to get the current segment from the database
+    
+    Parameters
+    ----------
+    current_x: float
+        x coordinate of the current position
+    current_y: float
+        y coordinate of the current position
+    tolerance: float
+        tolerance to find the current segment, normally half of the segmentsize
+    
+    Returns
+    -------
+    current_segment: Segments
+        segment in which the current position is located
+    """
+
     # get current segment
     current_segment = Segments.select().where(Segments.sm_x.between(current_x - tolerance, current_x + tolerance),
                                               Segments.sm_y.between(current_y - tolerance, current_y + tolerance)).get()
@@ -74,6 +117,19 @@ def get_current_segment(current_x, current_y, tolerance):
 
 
 def get_segment_for_id(id):
+    """
+    Function to get the segment with the given id from the database
+    
+    Parameters
+    ----------
+    id: int
+        id of the segment to be returned
+        
+    Returns
+    -------
+    segment: Segments
+        segment with the given id
+    """
     # get current segment
     segment = Segments.select().where(Segments.id == id).get()
     return segment
