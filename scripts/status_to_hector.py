@@ -95,7 +95,8 @@ class StatusToHector(object):
                         empty_msg = Empty()
                         self.pub_release.publish(empty_msg)
                         rospy.loginfo("rosnode kill /uav1/status_to_hector")
-                        subprocess.call(["/home/lennart/catkin_ws/src/aro/scripts/roskill_status_to_hector.sh"])
+                        #subprocess.call(["/home/lennart/catkin_ws/src/aro/scripts/roskill_status_to_hector.sh"])
+                        #This file is not existing anymore!
                         break
                     
         self.prev_status =  msg
