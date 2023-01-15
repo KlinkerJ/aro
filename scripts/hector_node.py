@@ -3,7 +3,7 @@
 import sys
 import rospy
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Vector3
 from std_msgs.msg import Bool, Empty
 from sensor_msgs.msg import Range, LaserScan
 import numpy as np
@@ -16,38 +16,32 @@ class HectorNode(object):
     def __init__(self, dronetype):
 
         self.dronetype = dronetype # 1 = measurement, 2 = fertilization
-        self.corners = []  # array of corners, empty at start <-- kann aber auch gut über yaml übergeben werden siehe weiter unten
-        self.battery_time = time.time()
         self.measurement_active = False
-        self.battery = 100
         self.fertilize_gram = 1000
-        self.current_segment = 0
         self.heights = []
         self.cmd_vel = Twist()
         self.range = 0 
-        self.fertilization_speed = 0
-
 
         rospy.init_node('hector_node')
 
         self.odometry = Odometry()
-        rospy.Subscriber("/ground_truth/state", Odometry,
-                         self.pose_callback)  # topic published with 100 Hz
+        rospy.Subscriber("/ground_truth/state", Odometry, self.pose_callback)  # topic published with 100 Hz
 
         rospy.Subscriber("/sonar_height", Range, self.sonar_callback)  # 10 Hz
 
         # release drone with empty pub on '/release' - topic
         rospy.Subscriber("/release", Empty, self.release_callback)
 
-        rospy.Subscriber("/scan", LaserScan, self.scan_callback) # sim schmiert ab wenn callback drin ist, auch wenn sensor auf minimalen einstellungen ist
-        
         # pub drone control velocity
         self.cmd_publisher = rospy.Publisher("/cmd_vel", Twist, queue_size=1) 
+
+        # pub drone control fertilizer stock quantity [max, actual, last fertilization quantity]
+        if dronetype == 2: self.fertilizer_publisher = rospy.Publisher("/fertilizer_stock", Vector3, queue_size=1) 
         
         # get drone home position and save to list
         home_pos = rospy.get_param(f'~uav{dronetype}')
         self.home_pos = list(home_pos['home'].values()) # x,y,z
-        rospy.logwarn(f'uav{dronetype} home: {self.home_pos}')
+        rospy.loginfo(f'uav{dronetype} home: {self.home_pos}')
         
         # get nested dictornary for corners from yaml and save to global list
         corners = rospy.get_param('~corners')
@@ -60,43 +54,36 @@ class HectorNode(object):
         # get segment_size
         self.segment_size = rospy.get_param('~segment_size')
         
-        # get marfing (how much southern should the drone start to first segment)
+        # get margin (how much southern should the drone start to first segment)
         self.margin = rospy.get_param('~margin')
-
+        
+        # get sonar offset (sensor mounted under drone origin)
         self.sonar_offset = rospy.get_param('~sonar_offset')  # m
 
 
     def release_callback(self, empty_msg):
-        
         # release drone with empty pub on '/release' - topic
-        rospy.logwarn("release of drone: " + str(self.dronetype))
-        
-        # start drone and fly at working height
-        #self.flyToPosition([None, None, self.working_height])
 
-        # probably not the best technique: we should self-detect the height bei slowly approaching the ground and detecting the height with sonar
-        # working height: height at which the sonar detects plants with a margin
-        # not yet implemented. if the drone is too high, it should descend slowly until it is at the working height
+        rospy.logwarn("release of drone: " + str(self.dronetype))
         
         if self.dronetype == 1:
 
             self.determine_working_height()
-
-            #self.corners = [[10, 2], [10, 10], [2, 10], [2, 10]]
-
             self.calulate_segments()
             self.start_measure()
         
         elif self.dronetype == 2:
 
-            # fly to all points and fertilize
             self.fertilize()
         
         self.land(self.home_pos)
+
         return
 
-    # calculates segments from corners and saves them in db
+
     def calulate_segments(self):
+        # calculates segments from corners and saves them in db
+
         if not len(self.corners) == 4:
             return
          
@@ -111,39 +98,33 @@ class HectorNode(object):
         return
 
 
-    def scan_callback(self, scan): # überlastet die sim!!
-        if self.working_height_set == False:
-            ranges = scan.ranges
-            print(len(ranges), min(ranges), max((ranges)))
-            #self.scan_range_min = scan.range_min
-
-
     def determine_working_height(self):
         rospy.loginfo('Determining working height.')
 
+        # via sonar
         self.flyToPosition([None, None, self.working_height])
-        f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model) get via corners
+        f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model)
         f_m_y = (self.corners[1][1] - self.corners[0][1]) / 2 + 2
 
         rospy.logwarn('field mid point: ' + str(f_m_x) + str(f_m_y))
         self.flyToPosition([f_m_x, f_m_y])
 
-        while self.range >= 1: # min height above plants in middle of field
+        while self.range >= 1: # min height above plants in middle of the field
             self.flyToPosition([None, None, self.odometry.pose.pose.position.z - 0.5])
 
         self.working_height_set = True
-        self.working_height = self.odometry.pose.pose.position.z # pub for second drone ??
+        self.working_height = self.odometry.pose.pose.position.z
         return
-
 
 
     def start_measure(self): 
         rospy.loginfo("Starting the measurement.")
-        constants = db.get_constants()
-        # write constants to object
-        self.constants = constants
-        # get first point
         
+        # write constants to object
+        constants = db.get_constants()
+        self.constants = constants
+
+        # get first point
         first_point = db.calculate_first_point(
             constants['min_x'], constants['min_y'], constants['max_y'], self.margin, self.segment_size)
 
@@ -177,64 +158,76 @@ class HectorNode(object):
 
         return
 
+
     def fertilize(self):
         rospy.loginfo("Starting Fertilization.")
+
+        fertilizer_msg = Vector3()
+        fertilizer_msg.x = 1000 # max value [g]
+        fertilizer_msg.y = 1000 # remaining quantity
+        fertilizer_msg.z = 0 # fertilization quantity on last segment
+        self.fertilizer_publisher.publish(fertilizer_msg)
+
         constants = db.get_constants()
-        # write constants to object
         self.constants = constants
         fertilize_margin = 0.5
         height_goal = 2
-        p_factor = 5
-        fertilize_factor = 50 # 30g per Second
+        p_factor = 4
+        fertilize_factor = 30 # g per second
 
-        #self.flyToPosition([None, None, self.working_height])
-
-        # test path generation
+        # path generation
         v1, v2, v3 = db.generate_path(self.home_pos)
         v1[0].append(self.home_pos[2] + fertilize_margin)
         v1[-1].append(self.home_pos[2] + fertilize_margin)
         for point in v1:
-            #rospy.loginfo("Using V1 for Path Generation: " + str(point))
-            # using v1 path generation
             try:
                 segment_height = db.get_current_segment(point[0], point[1], self.segment_size / 2).height
                 if (self.odometry.pose.pose.position.z > segment_height + fertilize_margin):
                     # current position is higher then next segment
                     z = self.odometry.pose.pose.position.z
-                    self.flyToPosition([point[0], point[1], z], vmax=0.6, ramp=0.25) # fly to segment
-                    self.flyToPosition([point[0], point[1], segment_height + fertilize_margin], vmax=0.6, ramp=0.25) # fly to segment height
+                    self.flyToPosition([point[0], point[1], z], vmax=0.8, ramp=0.25, tol=0.1) # fly to segment
+                    self.flyToPosition([point[0], point[1], segment_height + fertilize_margin], vmax=0.8, ramp=0.25, tol=0.1) # fly to segment height
                 else:
                     # current position is lower then next segment
                     x = self.odometry.pose.pose.position.x
                     y = self.odometry.pose.pose.position.y
                     z = segment_height + fertilize_margin
-                    self.flyToPosition([x, y, z], vmax=0.6, ramp=0.25) # fly to segment height
-                    self.flyToPosition([point[0], point[1], z], vmax=0.6, ramp=0.25) # fly to segment
+                    self.flyToPosition([x, y, z], vmax=0.8, ramp=0.25, tol=0.05) # fly to segment height
+                    self.flyToPosition([point[0], point[1], z], vmax=0.8, ramp=0.25, tol=0.1) # fly to segment
                 
                 p = abs(segment_height - height_goal) * p_factor
                 new_fertilize_gram = self.fertilize_gram - (p * fertilize_factor)
                 if new_fertilize_gram < 0:
-                    # if less then 200g left after fertilizing this segment, recharge first
+                    # if less then 0g left after fertilizing this segment, recharge first
                     last_position = [self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.odometry.pose.pose.position.z]
-                    self.flyToPosition([last_position[0], last_position[1], self.working_height], vmax=0.6, ramp=0.25)
-                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], vmax=0.6, ramp=0.25)
-                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.home_pos[2]], vmax=0.6, ramp=0.25)
-                    rospy.loginfo("Recharching Fertilize Container!")
+                    self.flyToPosition([last_position[0], last_position[1], self.working_height], vmax=0.8, ramp=0.25)
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], ramp=0.25)
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.home_pos[2]], ramp=0.25, tol=0.05)
+                    rospy.logwarn("Recharching Fertilize Container!")
                     rospy.sleep(10)
                     self.fertilize_gram = 1000
-                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], vmax=0.6, ramp=0.25)
-                    self.flyToPosition([last_position[0], last_position[1], self.working_height], vmax=0.6, ramp=0.25)
-                    self.flyToPosition(last_position, vmax=0.6, ramp=0.25)
+                    fertilizer_msg.y = self.fertilize_gram
+                    self.fertilizer_publisher.publish(fertilizer_msg)
+                    self.flyToPosition([self.home_pos[0], self.home_pos[1], self.working_height], ramp=0.25)
+                    self.flyToPosition([last_position[0], last_position[1], self.working_height], ramp=0.25)
+                    self.flyToPosition(last_position, vmax=0.8, ramp=0.25, tol=0.05)
                     
-                rospy.loginfo("Fertilizing with " + str(p * fertilize_factor) + "g. Remaining: " + str(self.fertilize_gram))
+                fertilize_quantity = p * fertilize_factor
+                self.fertilize_gram = self.fertilize_gram - fertilize_quantity
+                rospy.loginfo("Fertilizing with " + str(fertilize_quantity) + "g. Remaining: " + str(self.fertilize_gram))
                 rospy.sleep(p)
-                self.fertilize_gram = self.fertilize_gram - (p * fertilize_factor)
+                
+                fertilizer_msg.y = self.fertilize_gram 
+                fertilizer_msg.z = fertilize_quantity 
+                self.fertilizer_publisher.publish(fertilizer_msg)
+
             except Exception as e:
                 print(e)
-                self.flyToPosition(point, vmax=0.6, ramp=0.25)
+                self.flyToPosition(point, vmax=0.6, ramp=0.25, tol=0.05)
         return
 
-    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp = 0.4):
+
+    def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp=0.4):
 
         # set self.pid_time to allow calculation of cycle time -> needed for velocity limit
         self.pid_time = time.time()
@@ -260,8 +253,6 @@ class HectorNode(object):
         # p - controller for position "navigation"
         while abs(e_x) > tol or abs(e_y) > tol or abs(e_z) > tol:
 
-            #rospy.loginfo('flying')
-
             q_x = e_x * p_x
             q_y = e_y * p_y
             q_z = e_z * p_z
@@ -273,14 +264,6 @@ class HectorNode(object):
                 q_y = q_y * vmax / v
                 q_z = q_z * vmax / v
                 pass
-            
-            if self.dronetype == 2 and self.fertilization_speed > 0:
-                rospy.logwarn("Limiting Fertiliazion Speed")
-                v = math.sqrt(q_x**2 + q_y**2 + q_z**2)
-                if v > self.fertilization_speed:
-                    q_x = q_x * self.fertilization_speed / v
-                    q_y = q_y * self.fertilization_speed / v
-                    q_z = q_z * self.fertilization_speed / v
                     
             # limit acceleration, calculate length of vector -> if larger than 140% of last cycle, scale vector to 140% of last cycle
             try:
@@ -316,14 +299,16 @@ class HectorNode(object):
 
             self.cmd_publisher.publish(cmd_vel)
 
+
     def land(self, pos):
         rospy.loginfo(f'landing to: {pos}')
         self.flyToPosition(pos)
-        self.flyToPosition([None, None, 0]) # 1D list --> fly in z-axis
+        self.flyToPosition([None, None, 0])
 
 
-    # controller for planar rotational shift (x-y-plane, rotation about z)
     def rotationShift(self, x, y, theta):
+        # controller for planar rotational shift (x-y-plane, rotation about z)
+
         rot = np.array([[np.cos(theta), -np.sin(theta)],
                        [np.sin(theta), np.cos(theta)]])  # Drehmatrix
         rot = np.linalg.inv(rot)  # Inverse Drehmatrix
@@ -331,58 +316,21 @@ class HectorNode(object):
         new_y = (rot[1][0] * x) + (rot[1][1] * y)
         return new_x, new_y
 
-    # calling for and saving altitude values associated with the current segment
+
     def sonar_callback(self, data):
-        # print("Sonar Height:", round(data.range, 2))
+        # calling for and saving altitude values associated with the current segment
+
         if self.dronetype == 1:
             if self.measurement_active:
-                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, round(self.odometry.pose.pose.position.z - data.range - self.sonar_offset, 2)])
-            # try:
-            #     current_segment = db.get_current_segment(
-            #         self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
-            # except:
-            #     #print("No current Segment")
-            #     if len(self.heights) > 0:
-            #         last_segment = db.get_segment_for_id(self.current_segment)
-            #         db.save_heights_for_segment(last_segment, self.heights)
-            #         self.current_segment = 0
-            #         self.heights = []
-            # else:
-            #     if self.current_segment == 0:
-            #         # set new segment
-            #         self.current_segment = current_segment.id
-            #         self.heights = []
-            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-            #     elif self.current_segment == current_segment.id:
-            #         # append height
-            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
-            #     else:
-            #         # save heights for last segment
-            #         last_segment = db.get_segment_for_id(self.current_segment)
-            #         db.save_heights_for_segment(last_segment, self.heights)
-            #         # set new segment
-            #         self.current_segment = current_segment.id
-            #         self.heights = []
-            #         self.heights.append(round(self.odometry.pose.pose.position.z - data.range, 2))
+                self.heights.append([self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, 
+                round(self.odometry.pose.pose.position.z - data.range - self.sonar_offset, 2)])
+            
+            # determine working height via sonar
+            if self.measurement_active == False and self.working_height_set == False:
+               self.range = data.range
+
 
     def pose_callback(self, data):
-        # battery calculation via time (0.001% per second)
-        if not self.battery_time:
-            self.battery_time = time.time()
-        else:
-            self.battery -= (time.time() - self.battery_time) * 0.00001
-            self.battery_time = time.time()
-
-        # battery calculation via flown distance
-        diff_x = abs(self.odometry.pose.pose.position.x -
-                     data.pose.pose.position.x)
-        diff_y = abs(self.odometry.pose.pose.position.y -
-                     data.pose.pose.position.y)
-        distance = math.sqrt(diff_x**2 + diff_y**2)  # flown distance
-        # 0.0001 is the battery consumption per meter (0.01% per meter)
-        self.battery -= distance * 0.0001
-
-        # we should include something to charge the battery at position x,y,z as its homebase
 
         # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(
@@ -394,20 +342,11 @@ class HectorNode(object):
 
         self.odometry.pose.pose.orientation.z = round(
             self.quaterionToRads(data), 2)
-        
 
-        #Ursache für das nicht anhalten der Drohne 2!!!
-        # if self.dronetype == 2:
-        #     try:
-        #         current_segment = db.get_current_segment(
-        #             self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y, self.constants['tolerance'])  # get current segment - not sure if fast enough via DB
-        #         self.fertilization_speed = (3 - current_segment.height) * 10
-        #         rospy.loginfo("Fertilization Speed" + str(self.fertilization_speed))
-        #     except:
-        #         self.fertilization_speed = 0
+   
+    def quaterionToRads(self, data):
+        # transform coordinates and angles from quaternion to values in radiant
 
-    # transform coordinates and angles from quaternion to values in radiant
-    def quaterionToRads(self, data):  # aus ui_hector_quad.py
         x = data.pose.pose.orientation.x
         y = data.pose.pose.orientation.y
         z = data.pose.pose.orientation.z
