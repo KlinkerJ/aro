@@ -82,7 +82,7 @@ class HectorNode(object):
             Empty message, not used.
         """
 
-        rospy.logwarn("release of drone: " + str(self.dronetype))
+        rospy.loginfo("release of drone: " + str(self.dronetype))
         
         #  start measurement or fertilization depending on dronetype
         if self.dronetype == 1:
@@ -129,7 +129,7 @@ class HectorNode(object):
         f_m_x = (self.corners[0][0] - self.corners[3][0]) / 2 + 2 # +2 (offset of first plant model)
         f_m_y = (self.corners[1][1] - self.corners[0][1]) / 2 + 2
 
-        rospy.logwarn('field mid point: ' + str(f_m_x) + str(f_m_y))
+        rospy.loginfo('field mid point: ' + str(f_m_x) + str(f_m_y))
         self.flyToPosition([f_m_x, f_m_y])
 
         while self.range >= 1: # min height above plants in middle of the field
