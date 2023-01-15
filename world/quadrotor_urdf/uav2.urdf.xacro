@@ -4,7 +4,7 @@
   xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Included URDF Files -->
-  <xacro:include filename="$(find aro)/world/quadrotor_urdf/quadrotor_base.urdf.xacro" />
+  <xacro:include filename="$(find aro)/world/quadrotor_urdf/uav2_base.urdf.xacro" />
 
   <!-- Instantiate quadrotor_base_macro once (has no parameters atm) -->
   <xacro:quadrotor_base_macro />

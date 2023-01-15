@@ -2,14 +2,12 @@
 
 <launch>
 
-    <arg name="model" default="$(find aro)/world/quadrotor_urdf/quadrotor.gazebo.xacro" />
-
     <include file="$(find hector_gazebo_worlds)/launch/start.launch">
         <arg name="world" value="$(find aro)/world/generated.world"/>
     </include>
 
     <include file="$(find hector_quadrotor_gazebo)/launch/spawn_quadrotor.launch">
-        <arg name="model" value="$(arg model)" />
+        <arg name="model" value="$(find aro)/world/quadrotor_urdf/uav1.gazebo.xacro" />
         <arg name="x" value="8" />
         <arg name="z" value="1.1" />
         <arg name="y" value="4.0" />
