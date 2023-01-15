@@ -365,24 +365,52 @@ class HectorNode(object):
         pos : list
             x, y, z position in [m] to land to. If one of the values is None, the current position is used. Flying to z=0 after reaching the goal position.
         """
-        
+
         rospy.loginfo(f'landing to: {pos}')
         self.flyToPosition(pos)
         self.flyToPosition([None, None, 0])
 
 
     def rotationShift(self, x, y, theta):
-        # controller for planar rotational shift (x-y-plane, rotation about z)
+        """
+        Rotates a vector (x,y) planar by theta (in rad) around the origin.
+        
+        Parameters
+        ----------
+        x : float
+            x value of vector.
+        y : float
+            y value of vector.
+        theta : float
+            Rotation angle in [rad].
+        
+        Returns
+        -------
+        new_x : float
+            Rotated x value.
+        new_y : float
+            Rotated y value.
+        """
 
         rot = np.array([[np.cos(theta), -np.sin(theta)],
-                       [np.sin(theta), np.cos(theta)]])  # Drehmatrix
-        rot = np.linalg.inv(rot)  # Inverse Drehmatrix
+                       [np.sin(theta), np.cos(theta)]])  # Rotation Matrix
+        rot = np.linalg.inv(rot)  # Inverted Rotation Matrix
         new_x = (rot[0][0] * x) + (rot[0][1] * y)
         new_y = (rot[1][0] * x) + (rot[1][1] * y)
         return new_x, new_y
 
 
     def sonar_callback(self, data):
+        """
+        Callback function for sonar data.
+        Can be used for working height determination if self.measurement_active is not set
+        Is used for plant height measurement if self.measurement_active is set
+        
+        Parameters
+        ----------
+        data : sensor_msgs.msg.Range
+            Sonar data.
+        """
         # calling for and saving altitude values associated with the current segment
 
         if self.dronetype == 1:
@@ -396,6 +424,15 @@ class HectorNode(object):
 
 
     def pose_callback(self, data):
+        """
+        Callback function for drone position and orientation.
+        Writes position and orientation to global odometry variable.
+        
+        Parameters
+        ----------
+        data : nav_msgs.msg.Odometry
+            Drone position and orientation.
+        """
 
         # save actual drone position (x,y,z [m]) and orientation (z [°]) in global odometry variable
         self.odometry.pose.pose.position.x = round(
@@ -410,7 +447,20 @@ class HectorNode(object):
 
    
     def quaterionToRads(self, data):
-        # transform coordinates and angles from quaternion to values in radiant
+        """
+        Transform coordinates and angles from quaternion to values in radiant
+
+        Parameters
+        ----------
+        data : nav_msgs.msg.Odometry
+            Drone position and orientation.
+
+        Returns
+        -------
+        yawZActual : float
+            Yaw angle in radiant.
+        """
+    
 
         x = data.pose.pose.orientation.x
         y = data.pose.pose.orientation.y
