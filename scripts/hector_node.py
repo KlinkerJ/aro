@@ -13,11 +13,22 @@ import sektoren
 import time
 
 class HectorNode(object):
+    """
+    HectorNode is a class for controlling the drone.
+    """
     def __init__(self, dronetype):
+        """
+        Constructor of HectorNode.
 
-        self.dronetype = dronetype # 1 = measurement, 2 = fertilization
+        Parameters
+        ----------
+        dronetype : int
+            1 = measurement, 2 = fertilization
+        """
+
+        self.dronetype = dronetype
         self.measurement_active = False
-        self.fertilize_gram = 1000
+        self.fertilize_gram = 1000 
         self.heights = []
         self.cmd_vel = Twist()
         self.range = 0 
@@ -62,10 +73,18 @@ class HectorNode(object):
 
 
     def release_callback(self, empty_msg):
-        # release drone with empty pub on '/release' - topic
+        """
+        Callback for releasing the drone.
+
+        Parameters
+        ----------
+        empty_msg : Empty
+            Empty message, not used.
+        """
 
         rospy.logwarn("release of drone: " + str(self.dronetype))
         
+        #  start measurement or fertilization depending on dronetype
         if self.dronetype == 1:
 
             self.determine_working_height()
@@ -76,29 +95,33 @@ class HectorNode(object):
 
             self.fertilize()
         
-        self.land(self.home_pos)
+        self.land(self.home_pos) # land at home position after measurement or fertilization is done
 
         return
 
 
     def calulate_segments(self):
-        # calculates segments from corners and saves them in db
+        """
+        Calculates the segments from the corners and saves them in the database.
+        Needs the corners to be set in self.corners in format [[x1,y1],[x2,y2],[x3,y3],[x4,y4]].
+        """
 
         if not len(self.corners) == 4:
             return
          
-        rospy.logwarn(str(self.corners[0]) + str(self.corners[1]))
         columns = sektoren.getSektorForEckpunkte(
-            self.corners[0], self.corners[1], self.corners[2], self.corners[3], self.segment_size) # muss segment size ein Int sein??
-
-        rospy.logwarn(str(columns))
-        
+            self.corners[0], self.corners[1], self.corners[2], self.corners[3], self.segment_size)
+       
         db.create_segments_in_db(columns)
         rospy.loginfo("Segments created in DB.")
         return
 
 
     def determine_working_height(self):
+        """
+        Determines the working height of the drone.
+        Uses the sonar to determine the height above the plants.
+        """
         rospy.loginfo('Determining working height.')
 
         # via sonar
@@ -118,6 +141,11 @@ class HectorNode(object):
 
 
     def start_measure(self): 
+        """
+        Starts the measurement.
+        Flies to the first point, sets the measurement_active flag to True and saves the heights in the database after each column.
+        """
+
         rospy.loginfo("Starting the measurement.")
         
         # write constants to object
@@ -147,7 +175,6 @@ class HectorNode(object):
                 constants['min_y'], constants['max_y'], 
                 constants['segmentsize'], constants['tolerance'], self.margin, 
                 self.odometry.pose.pose.position.x, self.odometry.pose.pose.position.y)
-            #rospy.logwarn("Nextpoint: " + str(next_point))
             if next_point == []:
                 finished = True
                 break
