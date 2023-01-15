@@ -187,9 +187,14 @@ class HectorNode(object):
 
 
     def fertilize(self):
+        """
+        Starts the fertilization.
+        Can also do a selective fertilization based on a minimum or maximum plant height.
+        Typical Traveling Salesman Problem (TSP) is solved using simulated annealing.
+        """
         rospy.loginfo("Starting Fertilization.")
 
-        fertilizer_msg = Vector3()
+        fertilizer_msg = Vector3() 
         fertilizer_msg.x = 1000 # max value [g]
         fertilizer_msg.y = 1000 # remaining quantity
         fertilizer_msg.z = 0 # fertilization quantity on last segment
@@ -255,12 +260,36 @@ class HectorNode(object):
 
 
     def flyToPosition(self, point, tol=0.2, p_x=0.2, p_y=0.2, p_z=0.2, vmax=1.0, ramp=0.4):
+        """
+        Fly to a given position.
+
+        Parameters
+        ----------
+        point : list
+            x, y, z position in [m] to fly to. If one of the values is None, the current position is used.
+        tol : float, optional
+            Tolerance in [m] to reach the goal position. The default is 0.2.
+        p_x : float, optional
+            Proportional gain for x axis. The default is 0.2.
+        p_y : float, optional
+            Proportional gain for y axis. The default is 0.2.
+        p_z : float, optional
+            Proportional gain for z axis. The default is 0.2.
+        vmax : float, optional
+            Maximum velocity in [m/s]. The default is 1.0.
+        ramp : float, optional
+            Ramp, default is 0.4 -> throttelt to 40% more velocity than last cycle.
+
+        Returns
+        -------
+        None, but waits until goal position is reached.
+        """
 
         # set self.pid_time to allow calculation of cycle time -> needed for velocity limit
         self.pid_time = time.time()
 
         # get x and y value [m] from goal position
-        rospy.logwarn(f'fly to: {point}')
+        rospy.loginfo(f'fly to: {point}')
 
         # variable point format for points in 2D and 3D
         x = self.odometry.pose.pose.position.x if point[0] == None else point[0]
@@ -328,6 +357,15 @@ class HectorNode(object):
 
 
     def land(self, pos):
+        """
+        Land to a given position.
+        
+        Parameters
+        ----------
+        pos : list
+            x, y, z position in [m] to land to. If one of the values is None, the current position is used. Flying to z=0 after reaching the goal position.
+        """
+        
         rospy.loginfo(f'landing to: {pos}')
         self.flyToPosition(pos)
         self.flyToPosition([None, None, 0])
